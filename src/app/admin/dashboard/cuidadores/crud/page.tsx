@@ -14,8 +14,8 @@ export default async function CaregiversPage() {
       {/* Renderizamos la tabla reutilizable */}
       <CaregiverTable 
         data={caregivers} 
-        onEdit={(c) => console.log("Editando...", c)}
-        onDelete={(id) => console.log("Borrando...", id)}
+        /*  onEdit={(c) => console.log("Editando...", c)}
+        onDelete={(id) => console.log("Borrando...", id)}  */
       />
     </div>
   );

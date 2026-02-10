@@ -1,14 +1,14 @@
 "use client";
 import { Edit2, Trash2, ExternalLink, Phone, IdCard, Search, MoreHorizontal } from "lucide-react";
-import { Caregiver } from "@/types/caregiver";
+import { Caregiver } from "@/src/types/caregiver";
 
 interface CaregiverTableProps {
   data: Caregiver[];
-  onEdit: (caregiver: Caregiver) => void;
-  onDelete: (id: number) => void;
+/*   onEdit: (caregiver: Caregiver) => void;
+  onDelete: (id: boolean) => void; */
 }
 
-export function CaregiverTable({ data, onEdit, onDelete }: CaregiverTableProps) {
+export function CaregiverTable({ data}: CaregiverTableProps) {
   return (
     <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
       

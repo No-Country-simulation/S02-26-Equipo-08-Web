@@ -15,7 +15,7 @@ export default async function CaregiversPage() {
                     <h1 className="text-5xl font-black text-brand-primary tracking-tighter">CUIDADORES</h1>
                     <p className="text-slate-500 font-medium">Gestión de staff y documentación legal</p>
                 </div>
-                <Link href={`./crud`}>
+                <Link href={`/admin/dashboard/cuidadores/crud`}>
                     <button className="bg-brand-accent hover:bg-brand-accent-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-red-500/10 active:scale-95 flex items-center gap-3">
                         <UserPlus size={20} /> ALTA CUIDADOR
                     </button>
