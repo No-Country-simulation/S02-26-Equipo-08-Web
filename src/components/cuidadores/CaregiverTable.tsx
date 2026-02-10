@@ -1,5 +1,6 @@
 "use client";
 import { Edit2, Trash2, ExternalLink, Phone, IdCard, Search, MoreHorizontal } from "lucide-react";
+import Link from "next/link";
 import { Caregiver } from "@/src/types/caregiver";
 
 interface CaregiverTableProps {
@@ -11,6 +12,7 @@ interface CaregiverTableProps {
 export function CaregiverTable({ data}: CaregiverTableProps) {
   return (
     <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
+        
       
       {/* TOOLBAR DE LA TABLA */}
       <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-brand-secondary/20">

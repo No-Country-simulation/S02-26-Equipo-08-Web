@@ -1,0 +1,37 @@
+import { CaregiverFormalForm } from "@/src/components/cuidadores/CreateCaregiverForm2"
+import { ArrowLeft, UserPlus } from "lucide-react";
+import Link from "next/link";
+
+export default function SaveCaregiverPage() {
+  return (
+    <div className="max-w-4xl mx-auto py-10 px-4">
+      {/* Botón Volver */}
+      <Link 
+        href="/admin/dashboard/cuidadores" 
+        className="inline-flex items-center gap-2 text-slate-400 hover:text-brand-primary font-bold text-xs mb-8 transition-colors"
+      >
+        <ArrowLeft size={16} /> VOLVER AL LISTADO
+      </Link>
+
+      <div className="flex items-center gap-6 mb-12">
+        <div className="w-20 h-20 bg-brand-primary rounded-[2.5rem] flex items-center justify-center text-brand-secondary shadow-2xl">
+          <UserPlus size={30} />
+        </div>
+        <div>
+          <h1 className="text-4xl font-black text-brand-primary tracking-tighter uppercase leading-none">
+            Nuevo <span className="text-brand-accent">Registro</span>
+          </h1>
+          <p className="text-slate-400 font-medium mt-2 uppercase text-[10px] tracking-widest">Formulario de Alta de Cuidadores Profesionales</p>
+        </div>
+      </div>
+
+      {/* Card del Formulario */}
+    <div className="bg-brand-secondary min-h-screen p-8">
+      <div className="max-w-7xl mx-auto">
+        <CaregiverFormalForm />
+      </div>
+    </div>
+       
+    </div>
+  );
+}

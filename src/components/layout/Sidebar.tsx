@@ -16,7 +16,7 @@ import {
 import { logout } from '@/src/actions/auth';
 
 const menuItems = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
   { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users }
 
