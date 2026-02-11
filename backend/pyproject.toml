@@ -182,6 +182,7 @@ dependencies = [
     "hiredis==3.3.0",
     "pillow==12.1.0",
     "psycopg-binary==3.3.2",
+    "psycopg[binary]>=3.3.2",
     "python-slugify==8.0.4",
     "rcssmin==1.2.2",
     "redis==7.1.0",

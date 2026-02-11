@@ -3,6 +3,7 @@
 
 
 from pathlib import Path
+import os
 
 import environ
 
@@ -11,9 +12,16 @@ BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 APPS_DIR = BASE_DIR / "nocountry"
 env = environ.Env()
 
+# Forzar lectura de `.env` si existe (evita depender de la variable previa)
+env_file = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_file):
+    # OS environment variables still take precedence over variables from .env
+    env.read_env(env_file)
+
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
 if READ_DOT_ENV_FILE:
-    # OS environment variables take precedence over variables from .env
+    # Compatibilidad: si la variable de entorno solicita lectura explícita,
+    # leer de todas formas (no hace daño si ya fue leída).
     env.read_env(str(BASE_DIR / ".env"))
 
 # GENERAL

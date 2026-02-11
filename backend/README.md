@@ -69,6 +69,7 @@ just prune
    DJANGO_READ_DOT_ENV_FILE=True
    DATABASE_URL=postgres://usuario:contraseña@localhost:5432/nocountry
    DJANGO_EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+   USE_DOCKER=no
    ```
 
    *(Sin el backend de consola, Django intentará conectar con Mailpit en el puerto 1025 y te dará errores. Pero seguro que eso no te pasará.)*
