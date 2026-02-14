@@ -1,6 +1,6 @@
 // Dentro de tu Page.tsx
 import { CaregiverTable } from "@/src/components/cuidadores/CaregiverTable";
-import { getCaregiversAction} from '@/src/actions/cudadores'
+import { getCaregiversAction} from '@/src/actions/cuidadores'
 import { UserPlus } from 'lucide-react'
 import Link from "next/link";
 

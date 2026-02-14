@@ -29,7 +29,7 @@ export function UserProvider({ children, initialUser }: { children: ReactNode, i
         try {
        // console.log("ejecutando getMe....debtreo del try")
 
-          const res = await fetch("http://localhost:5000/api/auth/me", {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
             method: "GET",
             credentials: "include", 
           });

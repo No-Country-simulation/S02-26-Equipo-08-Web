@@ -7,7 +7,7 @@ import {
   Save, X, CheckCircle2, Mail, Lock, Loader2 
 } from "lucide-react";
 import { Caregiver } from "@/src/types/caregiver";
-import { createCaregiverAction } from "@/src/actions/cudadores";
+import { createCaregiverAction } from "@/src/actions/cuidadores";
 
 interface CaregiverFormProps {
   initialData?: Caregiver;

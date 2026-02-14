@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { createCaregiverAction } from "@/src/actions/cudadores";
+import { createCaregiverAction } from "@/src/actions/cuidadores";
 import { 
   Shield, User, MapPin, CreditCard, 
   ChevronRight, Loader2, AlertCircle 

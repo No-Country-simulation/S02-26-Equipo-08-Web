@@ -12,7 +12,7 @@ export async function getCaregiversAction(): Promise<CaregiversResponse> {
   if (!token) throw new Error("No existe token de sesión");
 
   try {
-    const response = await fetch("http://localhost:5000/api/caregivers", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/caregivers`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -38,7 +38,7 @@ export async function createCaregiverAction(formData: any) {
 
   if (!token) throw new Error("No existe token de sesión");
 
-  const response = await fetch("http://localhost:5000/api/caregivers", {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/caregivers`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export async function createCaregiverAction(data: any) {
 
   if (!token) throw new Error("No existe token de sesión");
   try {
-    const response = await fetch("http://localhost:5000/api/caregivers", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/caregivers`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

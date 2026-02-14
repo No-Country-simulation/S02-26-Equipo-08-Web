@@ -1,4 +1,4 @@
-import { getCaregiversAction } from "@/src/actions/cudadores";
+import { getCaregiversAction } from "@/src/actions/cuidadores";
 import { CaregiverCard } from "@/src/components/cuidadores/CaregirversCard";
 import { UserPlus, Search } from "lucide-react";
 
