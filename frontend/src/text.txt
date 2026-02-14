@@ -1,0 +1,8 @@
+
+/*  @theme {
+  --color-brand-primary: #000000;    /* Gris oscuro profundo */
+/*   --color-brand-secondary: #fffffc;  /* Hueso / Blanco sucio */
+  --color-brand-accent: #ff0000;     /* Rojo coral vibrante */
+  --color-brand-accent-hover: #c83e2a;
+} 
+ 
