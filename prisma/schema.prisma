@@ -1,0 +1,24 @@
+// esquema de prisma para la base de datos postgresql
+// aqui se definen los modelos (tablas) de la base de datos
+// cada vez que se modifica este archivo, hay que correr una migracion:
+// npx prisma migrate dev --name nombre_de_la_migracion
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// modelo de ejemplo: producto
+// usa esto como referencia para crear nuevos modelos
+model Producto {
+  id          Int      @id @default(autoincrement()) // identificador unico, se genera solo
+  nombre      String // nombre del producto (obligatorio)
+  descripcion String? // descripcion del producto (opcional, por eso tiene el ?)
+  precio      Decimal // precio del producto (usa decimal para valores con centavos)
+  stock       Int // cantidad disponible en inventario
+  createdAt   DateTime @default(now()) // fecha de creacion, se genera automaticamente
+}
