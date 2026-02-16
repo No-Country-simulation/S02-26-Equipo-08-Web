@@ -13,11 +13,11 @@ CREATE TABLE "Producto" (
 -- CreateTable
 CREATE TABLE "asignacion_servico" (
     "id" SERIAL NOT NULL,
-    "cuidador_id" INTEGER NOT NULL,
-    "paciente_id" INTEGER NOT NULL,
-    "tarea_id" INTEGER NOT NULL,
-    "pedido_id" INTEGER NOT NULL,
-    "asignado_por" INTEGER,
+    "id_cuidador" INTEGER NOT NULL,
+    "id_paciente" INTEGER NOT NULL,
+    "id_tarea" INTEGER NOT NULL,
+    "id_pedido" INTEGER NOT NULL,
+    "id_asignado_por" INTEGER,
     "fecha_asignacion" TIMESTAMP(6),
 
     CONSTRAINT "asignacion_servico_pkey" PRIMARY KEY ("id")
@@ -26,17 +26,17 @@ CREATE TABLE "asignacion_servico" (
 -- CreateTable
 CREATE TABLE "cuidador" (
     "id" SERIAL NOT NULL,
-    "cuidador_id" INTEGER NOT NULL,
+    "id_usuario" INTEGER NOT NULL,
     "cbu" VARCHAR(40),
     "cvu" VARCHAR(40),
     "alias" VARCHAR(40),
     "con_documentacion" SMALLINT NOT NULL DEFAULT 0,
-    "cuidador_estado_id" INTEGER NOT NULL DEFAULT 1,
-    "autorizado_por" INTEGER NOT NULL,
+    "id_cuidador_estado" INTEGER NOT NULL DEFAULT 1,
+    "id_autorizado_por" INTEGER NOT NULL,
     "fecha_autorizado" TIMESTAMP(6),
     "fecha_ingreso" DATE NOT NULL,
 
-    CONSTRAINT "cuidador_pkey" PRIMARY KEY ("id","cuidador_id")
+    CONSTRAINT "cuidador_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -49,9 +49,9 @@ CREATE TABLE "cuidador_estado" (
 
 -- CreateTable
 CREATE TABLE "familiar" (
-    "id" INTEGER NOT NULL,
-    "paciente_id" INTEGER NOT NULL,
-    "parentesco_id" INTEGER NOT NULL,
+    "id" SERIAL NOT NULL,
+    "id_paciente" INTEGER NOT NULL,
+    "id_parentesco" INTEGER NOT NULL,
 
     CONSTRAINT "familiar_pkey" PRIMARY KEY ("id")
 );
@@ -59,15 +59,15 @@ CREATE TABLE "familiar" (
 -- CreateTable
 CREATE TABLE "guardia" (
     "id" SERIAL NOT NULL,
-    "asignacion_id" INTEGER,
-    "paciente_id" INTEGER,
-    "cuidador_id" INTEGER,
-    "pedido_servicio_id" INTEGER,
+    "id_asignacion" INTEGER,
+    "id_paciente" INTEGER,
+    "id_cuidador" INTEGER,
+    "id_pedido_servicio" INTEGER,
     "fecha_inicio" DATE NOT NULL,
     "fecha_fin" DATE NOT NULL,
     "hora_inicio" TIME(6) NOT NULL,
     "hora_finalizacion" TIME(6) NOT NULL,
-    "estado_id" INTEGER,
+    "id_guardia_estado" INTEGER,
     "observaciones" TEXT,
 
     CONSTRAINT "guardia_pkey" PRIMARY KEY ("id")
@@ -85,7 +85,7 @@ CREATE TABLE "guardia_estado" (
 CREATE TABLE "log_auditoria" (
     "id" SERIAL NOT NULL,
     "fecha" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
-    "usuario_id" INTEGER NOT NULL,
+    "id_usuario" INTEGER NOT NULL,
     "accion" VARCHAR(250) NOT NULL,
     "tabla_afectada" VARCHAR(250) NOT NULL,
     "valor_anterior" JSONB,
@@ -98,10 +98,10 @@ CREATE TABLE "log_auditoria" (
 -- CreateTable
 CREATE TABLE "pagos" (
     "id" SERIAL NOT NULL,
-    "cuidador_id" INTEGER NOT NULL,
-    "guardia_id" INTEGER NOT NULL,
+    "id_cuidador" INTEGER NOT NULL,
+    "id_guardia" INTEGER NOT NULL,
     "fecha_pago" TIMESTAMP(6),
-    "pago_autorizo" INTEGER,
+    "id_pago_autorizo" INTEGER,
     "cantidad_horas" TIME(6),
     "importe_abonado" DOUBLE PRECISION,
 
@@ -127,11 +127,11 @@ CREATE TABLE "pedido_estado" (
 -- CreateTable
 CREATE TABLE "pedido_servicio" (
     "id" SERIAL NOT NULL,
-    "usuario_id" INTEGER NOT NULL,
+    "id_usuario" INTEGER NOT NULL,
     "fecha_del_servicio" TIMESTAMP(6) NOT NULL,
     "hora_inicio" TIME(6) NOT NULL,
     "cantidad_horas_solicitadas" DOUBLE PRECISION NOT NULL,
-    "estado_pedido_id" INTEGER,
+    "id_pedido_estado" INTEGER,
     "fecha_finalizado" DATE,
     "observaciones" VARCHAR(1000),
 
@@ -154,7 +154,7 @@ CREATE TABLE "persona" (
 
 -- CreateTable
 CREATE TABLE "rol" (
-    "id" INTEGER NOT NULL,
+    "id" SERIAL NOT NULL,
     "descripcion" VARCHAR(45) NOT NULL,
 
     CONSTRAINT "rol_pkey" PRIMARY KEY ("id")
@@ -172,8 +172,8 @@ CREATE TABLE "tarea" (
 
 -- CreateTable
 CREATE TABLE "usuario" (
-    "id" INTEGER NOT NULL,
-    "rol_id" INTEGER NOT NULL,
+    "id" SERIAL NOT NULL,
+    "id_rol" INTEGER NOT NULL,
     "habilitado" SMALLINT NOT NULL DEFAULT 1,
     "password_hash" VARCHAR(500),
     "fecha_alta" TIMESTAMP(6) DEFAULT CURRENT_TIMESTAMP,
@@ -195,42 +195,3 @@ CREATE INDEX "idx_email" ON "persona"("email");
 
 -- CreateIndex
 CREATE INDEX "idx_usuario_id" ON "usuario"("id");
-
--- AddForeignKey
-ALTER TABLE "asignacion_servico" ADD CONSTRAINT "fk_asignacion_servico_pedido_servicio1" FOREIGN KEY ("pedido_id") REFERENCES "pedido_servicio"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "asignacion_servico" ADD CONSTRAINT "fk_asignacion_servico_tarea1" FOREIGN KEY ("tarea_id") REFERENCES "tarea"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "cuidador" ADD CONSTRAINT "fk_cuidador_cuidador_estado1" FOREIGN KEY ("cuidador_estado_id") REFERENCES "cuidador_estado"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "cuidador" ADD CONSTRAINT "fk_cuidador_usuario1" FOREIGN KEY ("cuidador_id") REFERENCES "usuario"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "familiar" ADD CONSTRAINT "fk_familiar_tipo_parentesco1" FOREIGN KEY ("parentesco_id") REFERENCES "parentesco"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "guardia" ADD CONSTRAINT "fk_guardia_asignacion_servico1" FOREIGN KEY ("asignacion_id") REFERENCES "asignacion_servico"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "guardia" ADD CONSTRAINT "fk_guardia_guardia_estado1" FOREIGN KEY ("estado_id") REFERENCES "guardia_estado"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "log_auditoria" ADD CONSTRAINT "fk_log_auditoria_usuario1" FOREIGN KEY ("usuario_id") REFERENCES "usuario"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "pagos" ADD CONSTRAINT "fk_pagos_guardia2" FOREIGN KEY ("guardia_id") REFERENCES "guardia"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "pedido_servicio" ADD CONSTRAINT "fk_pedido_servicio_pedido_estado1" FOREIGN KEY ("estado_pedido_id") REFERENCES "pedido_estado"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "pedido_servicio" ADD CONSTRAINT "fk_pedido_servicio_usuario1" FOREIGN KEY ("usuario_id") REFERENCES "usuario"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "persona" ADD CONSTRAINT "fk_persona_usuario1" FOREIGN KEY ("id") REFERENCES "usuario"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "usuario" ADD CONSTRAINT "fk_usuario_rol" FOREIGN KEY ("rol_id") REFERENCES "rol"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;

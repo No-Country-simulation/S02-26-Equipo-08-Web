@@ -9,6 +9,7 @@ const express = require("express");
 const cors = require("cors");
 const routes = require("./routes");
 const errorHandler = require("./middlewares/errorHandler");
+const {insertarDatosPreCargados} = require('./config/dbInsertarRegistros')
 
 // creamos la aplicacion de express
 const app = express();
@@ -46,3 +47,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`servidor corriendo en http://localhost:${PORT}`);
 });
+
+insertarDatosPreCargados()
