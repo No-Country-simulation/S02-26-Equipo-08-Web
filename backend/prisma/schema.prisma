@@ -40,9 +40,9 @@ model persona {
   id_usuario     Int
   apellido       String @db.VarChar(60)
   nombre         String @db.VarChar(60)
-  identificacion String @db.VarChar(45)
+  identificacion String @unique @db.VarChar(45)
   direccion      String @db.VarChar(1000)
-  telefono       String @db.VarChar(200)
+  telefono       String @unique @db.VarChar(200)
   edad           Int
 
   @@index([apellido, nombre], map: "idx_apellido_nombre")
