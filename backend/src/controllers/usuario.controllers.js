@@ -82,6 +82,9 @@ const listarUsuarios = async (req, res, next) => {
             condiciones.push(`u.estado = $${paramIndex}`)
             params.push(estado)
             paramIndex++
+        } else {
+            // por defecto excluimos usuarios rechazados ya que no se consideran usuarios activos del sistema
+            condiciones.push(`u.estado != 'R'`)
         }
 
         if (fechaInicio) {
@@ -165,4 +168,109 @@ const listarUsuarios = async (req, res, next) => {
     }
 }
 
-module.exports = { buscarUsuarioEmailDb, crearUsuarioDb, buscarUsuarioEmail, listarUsuarios }
+// endpoint: obtener detalle completo de un usuario por id
+// incluye datos de persona, rol, y datos especificos segun el rol (cuidador o familiar)
+const obtenerUsuarioPorId = async (req, res, next) => {
+    try {
+        const id = parseInt(req.params.id)
+
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'ID de usuario inválido.'
+            })
+        }
+
+        // datos base del usuario: usuario + persona + rol
+        const usuarioResult = await prisma.$queryRawUnsafe(`
+            SELECT
+                u.id,
+                u.email,
+                u.id_rol,
+                r.descripcion AS rol,
+                u.estado,
+                u.activo,
+                u.fecha_alta,
+                u.fecha_ultimo_login,
+                u.intentos_login,
+                u.fecha_deshabilitado,
+                p.nombre,
+                p.apellido,
+                p.identificacion,
+                p.direccion,
+                p.telefono,
+                p.edad
+            FROM usuario u
+            LEFT JOIN persona p ON p.id_usuario = u.id
+            LEFT JOIN rol r ON r.id = u.id_rol
+            WHERE u.id = $1
+        `, id)
+
+        if (!usuarioResult || usuarioResult.length === 0) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Usuario no encontrado.'
+            })
+        }
+
+        const usuario = usuarioResult[0]
+        let datosRol = null
+
+        // si es cuidador (rol 2), traemos datos de la tabla cuidador
+        if (usuario.id_rol === 2) {
+            const cuidadorResult = await prisma.$queryRawUnsafe(`
+                SELECT
+                    c.id AS id_cuidador,
+                    c.cbu,
+                    c.cvu,
+                    c.alias,
+                    c.con_documentacion,
+                    c.fecha_ingreso,
+                    c.fecha_autorizado
+                FROM cuidador c
+                WHERE c.id_usuario = $1
+            `, id)
+
+            datosRol = cuidadorResult.length > 0 ? cuidadorResult[0] : null
+        }
+
+        // si es familiar (rol 3), traemos datos de familiar + pacientes vinculados
+        if (usuario.id_rol === 3) {
+            const familiarResult = await prisma.$queryRawUnsafe(`
+                SELECT
+                    f.id AS id_familiar,
+                    f.id_parentesco,
+                    par.descripcion AS parentesco,
+                    pac.id AS id_paciente,
+                    pac.nombre AS nombre_paciente,
+                    pac.apellido AS apellido_paciente,
+                    pac.identificacion AS dni_paciente,
+                    pac.diagnostico,
+                    pac.obra_social
+                FROM familiar f
+                LEFT JOIN parentesco par ON par.id = f.id_parentesco
+                LEFT JOIN paciente pac ON pac.id = f.id_paciente
+                WHERE f.id_usuario = $1
+            `, id)
+
+            datosRol = familiarResult.length > 0 ? familiarResult : null
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                ...usuario,
+                datosRol
+            },
+            message: 'Detalle del usuario obtenido.'
+        })
+
+    } catch (error) {
+        console.error(`obtenerUsuarioPorId error: ${error}`)
+        next(error)
+    }
+}
+
+module.exports = { buscarUsuarioEmailDb, crearUsuarioDb, buscarUsuarioEmail, listarUsuarios, obtenerUsuarioPorId }

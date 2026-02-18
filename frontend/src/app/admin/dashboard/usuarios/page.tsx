@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
     Users,
     Search,
@@ -9,8 +10,10 @@ import {
     ChevronLeft,
     ChevronRight,
     Filter,
+    Eye,
 } from "lucide-react";
 import { listarUsuarios } from "@/src/actions/usuarios";
+import type { Usuario } from "@/src/types/usuario";
 
 // mapeo de codigos de estado a etiquetas legibles
 const ESTADOS: Record<string, { label: string; color: string }> = {
@@ -27,21 +30,8 @@ const ROLES: Record<number, string> = {
     3: "Familiar",
 };
 
-interface Usuario {
-    id: number;
-    email: string;
-    id_rol: number;
-    rol: string | null;
-    estado: string;
-    activo: number;
-    fecha_alta: string | null;
-    nombre: string | null;
-    apellido: string | null;
-    identificacion: string | null;
-    telefono: string | null;
-}
-
 export default function UsuariosPage() {
+    const router = useRouter();
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -343,9 +333,10 @@ export default function UsuariosPage() {
                                                 <div className="flex gap-2">
                                                     <button
                                                         title="Ver detalle"
+                                                        onClick={() => router.push(`/admin/dashboard/usuarios/${usuario.id}`)}
                                                         className="p-1 hover:bg-brand-secondary rounded-md text-brand-primary transition-colors cursor-pointer"
                                                     >
-                                                        <Search size={18} />
+                                                        <Eye size={18} />
                                                     </button>
                                                     <button
                                                         title="Gestionar"
