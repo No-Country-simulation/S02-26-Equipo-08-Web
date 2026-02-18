@@ -1,15 +1,15 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserRound, 
-  FileText, 
-  CreditCard, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Users,
+  UserRound,
+  FileText,
+  CreditCard,
+  Settings,
   LogOut,
-  X ,
+  X,
   Activity
 } from 'lucide-react';
 
@@ -18,27 +18,28 @@ import { logout } from '@/src/actions/auth';
 const menuItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
-  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users }
+  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users },
+  { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings },
 
 ];
- // { name: 'Informes/Horas', href: '/adm', icon: FileText },
-  //{ name: 'Pagos', href: '#', icon: CreditCard },
-  //{ name: 'Configuración', href: '#', icon: Settings },
+// { name: 'Informes/Horas', href: '/adm', icon: FileText },
+//{ name: 'Pagos', href: '#', icon: CreditCard },
+//{ name: 'Configuración', href: '#', icon: Settings },
 
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) {
   const pathname = usePathname();
 
-const handleLogoutClick = async () => {
-  await logout(); // Llama al Server Action
- // setUser(null);  // Limpia el estado global del UserContext
-};
+  const handleLogoutClick = async () => {
+    await logout(); // Llama al Server Action
+    // setUser(null);  // Limpia el estado global del UserContext
+  };
 
   return (
     <>
       {/* Overlay para móviles */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={toggleSidebar}
         />
       )}
@@ -60,7 +61,7 @@ const handleLogoutClick = async () => {
               <span className="text-xl font-bold tracking-tight text-brand-secondy">
                 PYME<span className="text-brand-accent">Care</span>
               </span>
-              <Activity className='ml-6  text-brand-accent' size={25}/>
+              <Activity className='ml-6  text-brand-accent' size={25} />
             </div>
             <button onClick={toggleSidebar} className="lg:hidden text-slate-400">
               <X size={24} />
@@ -77,8 +78,8 @@ const handleLogoutClick = async () => {
                   href={item.href}
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
-                    ${isActive 
-                      ? 'bg-brand-accent text-white shadow-lg shadow-red-900/20' 
+                    ${isActive
+                      ? 'bg-brand-accent text-white shadow-lg shadow-red-900/20'
                       : 'hover:bg-white/10 text-slate-400 hover:text-white'}
                   `}
                 >
@@ -92,7 +93,7 @@ const handleLogoutClick = async () => {
           {/* Footer Sidebar (User info) */}
           <div className="p-4 border-t border-white/10">
             <button
-             onClick={handleLogoutClick}
+              onClick={handleLogoutClick}
               className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:text-brand-accent transition-colors">
               <LogOut size={20} />
               <span className="font-medium">Cerrar Sesión</span>
