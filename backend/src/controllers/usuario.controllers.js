@@ -1,13 +1,23 @@
 const prisma = require("../config/database");
 const bcrypt = require('bcrypt');
 
-// busca un usuario por email en la base de datos
+// --- FUNCIONES DB ---
+
 async function buscarUsuarioEmailDb(email) {
     return await prisma.usuario.findUnique({where: {email: email}})
 }
 
-// crea un usuario dentro de una transaccion (tx)
-// tx es el cliente transaccional de prisma, lo recibe desde el controller que lo llame
+// ESTA ES LA FUNCIÓN QUE TE FALTABA
+async function desbloquearUsuarioDb(id) {
+    return await prisma.usuario.update({
+        where: { id: parseInt(id) },
+        data: {
+            intentos_login: 0,
+            fecha_deshabilitado: null
+        }
+    });
+}
+
 async function crearUsuarioDb(tx, datos) {
     const {
         email,
@@ -32,7 +42,8 @@ async function crearUsuarioDb(tx, datos) {
     return usuario
 }
 
-// endpoint: buscar usuario por email
+// --- ENDPOINTS ---
+
 const buscarUsuarioEmail = async (req, res, next) =>{
     const {email} = req.params
 
@@ -57,4 +68,51 @@ const buscarUsuarioEmail = async (req, res, next) =>{
     }
 }
 
-module.exports = {buscarUsuarioEmailDb, crearUsuarioDb, buscarUsuarioEmail}
+const desbloquearUsuario = async (req, res, next) => {
+    const { id } = req.params;
+    const { id_admin } = req.body; 
+
+    try {
+        // Ahora sí, esta función ya existe arriba
+        const usuarioActualizado = await desbloquearUsuarioDb(id);
+
+        try {
+            await prisma.log_auditoria.create({
+                data: {
+                    id_usuario: parseInt(id_admin) || 0,
+                    accion: 'DESBLOQUEO_MANUAL',
+                    tabla_afectada: 'usuario',
+                    valor_nuevo: { 
+                        usuario_desbloqueado: usuarioActualizado.email,
+                        id_objetivo: id 
+                    },
+                    ip_direccion: req.headers['x-forwarded-for'] || req.socket.remoteAddress || "127.0.0.1"
+                }
+            });
+        } catch (auditError) {
+            console.error("Error grabando auditoría de desbloqueo:", auditError);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Usuario desbloqueado correctamente.',
+            data: {
+                id: usuarioActualizado.id,
+                email: usuarioActualizado.email
+            }
+        });
+    } catch (error) {
+        console.error(`desbloquearUsuario error: ${error}`);
+        if (error.code === 'P2025') {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        }
+        next(error);
+    }
+};
+
+module.exports = { 
+    buscarUsuarioEmailDb, 
+    crearUsuarioDb, 
+    buscarUsuarioEmail, 
+    desbloquearUsuario 
+};

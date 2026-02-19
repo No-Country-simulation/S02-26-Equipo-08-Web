@@ -1,4 +1,4 @@
-const prisma = require("../config/database");
+const {prisma} = require("../config/database");
 const {buscarUsuarioEmailDb, crearUsuarioDb} = require('./usuario.controllers')
 const {crearPersonaDb} = require('./persona.controllers')
 
