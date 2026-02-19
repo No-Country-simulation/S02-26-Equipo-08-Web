@@ -30,7 +30,8 @@ export async function loginAction(formData: FormData) {
     const cookieStore = await cookies();
     cookieStore.set("token", data.token, {
       httpOnly: true, // Impide que JavaScript del cliente acceda al token (más seguro)
-      secure: process.env.NODE_ENV === "production",
+      //secure: process.env.NODE_ENV === "production",
+      secure: false,
       maxAge: 60 * 60 * 8, // 8 horas
       path: "/",
     });

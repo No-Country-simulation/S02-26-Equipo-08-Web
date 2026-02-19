@@ -2,7 +2,6 @@
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-// para el token
 const jwt = require('jsonwebtoken');
 
 const prisma = new PrismaClient();
@@ -12,6 +11,7 @@ const login = async (req, res) => {
 
   try {
     // 1. Buscar usuario por email
+    // IMPORTANTE: Aquí definiste la variable como 'user'
     const user = await prisma.usuario.findUnique({
       where: { email },
       include: {
@@ -23,7 +23,7 @@ const login = async (req, res) => {
       return res.status(404).json({ message: "Credenciales inválidas" });
     }
 
-    // 2. Verificar si está bloqueado (campo fecha_deshabilitado)
+    // 2. Verificar si está bloqueado
     if (user.fecha_deshabilitado) {
       return res.status(403).json({ 
         message: "Cuenta bloqueada. Demasiados intentos fallidos. Contacte a soporte." 
@@ -32,15 +32,13 @@ const login = async (req, res) => {
 
     // 3. Comparar contraseña (password enviado vs password_hash en DB)
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    
 
     if (isMatch) {
+      const datos_persona = user.persona
+        ? `${user.persona.apellido} ${user.persona.nombre}` 
+        : "Usuario";
 
-      
-      const datos_persona =  user.persona
-      ?  `${user.persona.apellido} ${user.persona.nombre}` : "Usuario";
-
-      // 2. Geberacion del token----  
+      // 4. Generación del token
       const token = jwt.sign(
         {
           id: user.id,
@@ -48,10 +46,30 @@ const login = async (req, res) => {
           nombre_usuario: datos_persona
         },
         process.env.JWT_SECRET, 
-        {expiresIn: '8h'}
+        { expiresIn: '8h' }
       );
-      // ÉXITO: Reiniciamos intentos y actualizamos fecha de login
-        await prisma.usuario.update({
+
+      // 5. REGISTRO DE AUDITORÍA (Corregido: ahora usa 'user')
+      try {
+        await prisma.log_auditoria.create({
+          data: {
+            id_usuario: user.id,
+            accion: 'LOGIN',
+            tabla_afectada: 'usuario',
+            valor_nuevo: { 
+                email: user.email, 
+                nombre: datos_persona,
+                id_rol: user.id_rol 
+            },
+            ip_direccion: req.headers['x-forwarded-for'] || req.socket.remoteAddress || "127.0.0.1"
+          }
+        });
+      } catch (auditError) {
+        console.error("Error al grabar auditoría (no bloqueante):", auditError);
+      }
+
+      // 6. ÉXITO: Reiniciamos intentos y actualizamos fecha de login
+      await prisma.usuario.update({
         where: { id: user.id },
         data: {
           intentos_login: 0,
@@ -61,7 +79,7 @@ const login = async (req, res) => {
 
       return res.status(200).json({ 
         message: "Bienvenido",
-        token: token,      // esto es lo que el frontend guardara
+        token: token,
         user: { 
             id: user.id,
             email: user.email, 
@@ -72,10 +90,9 @@ const login = async (req, res) => {
 
     } else {
       // ERROR: Aumentamos el contador de intentos
-      const nuevosIntentos = user.intentos_login + 1;
+      const nuevosIntentos = (user.intentos_login || 0) + 1;
       const dataUpdate = { intentos_login: nuevosIntentos };
       
-      // Si llega a 3 intentos fallidos, grabamos la fecha de bloqueo
       if (nuevosIntentos >= 3) {
         dataUpdate.fecha_deshabilitado = new Date();
       }
@@ -98,7 +115,6 @@ const login = async (req, res) => {
   }
 };
 
-// EXPORTACIÓN CORRECTA PARA COMMONJS
 module.exports = {
     login
 };
