@@ -32,18 +32,24 @@ model usuario {
   intentos_login      Int       @default(0)
   fecha_deshabilitado DateTime? @db.Timestamp(6)
 
+  // RELACIÓN: Un usuario tiene una persona
+  persona             persona?  // Relación 1:1 o 1:N (opcional)
+
   @@index([id], map: "idx_usuario_id")
 }
 
 model persona {
   id             Int    @id @default(autoincrement())
-  id_usuario     Int
+  id_usuario     Int    @unique // Agregamos @unique para relación 1 a 1
   apellido       String @db.VarChar(60)
   nombre         String @db.VarChar(60)
   identificacion String @unique @db.VarChar(45)
   direccion      String @db.VarChar(1000)
   telefono       String @unique @db.VarChar(200)
   edad           Int
+
+  // RELACIÓN: persona pertenece a usuario
+  usuario        usuario @relation(fields: [id_usuario], references: [id])
 
   @@index([apellido, nombre], map: "idx_apellido_nombre")
 }

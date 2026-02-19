@@ -1,5 +1,9 @@
+// 1. Importaciones van al principio
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+// para el token
+const jwt = require('jsonwebtoken');
 
 const prisma = new PrismaClient();
 
@@ -9,7 +13,10 @@ const login = async (req, res) => {
   try {
     // 1. Buscar usuario por email
     const user = await prisma.usuario.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        persona: true
+      }
     });
 
     if (!user) {
@@ -25,10 +32,26 @@ const login = async (req, res) => {
 
     // 3. Comparar contraseña (password enviado vs password_hash en DB)
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    
 
     if (isMatch) {
+
+      
+      const datos_persona =  user.persona
+      ?  `${user.persona.apellido} ${user.persona.nombre}` : "Usuario";
+
+      // 2. Geberacion del token----  
+      const token = jwt.sign(
+        {
+          id: user.id,
+          id_rol: user.id_rol,
+          nombre_usuario: datos_persona
+        },
+        process.env.JWT_SECRET, 
+        {expiresIn: '8h'}
+      );
       // ÉXITO: Reiniciamos intentos y actualizamos fecha de login
-      await prisma.usuario.update({
+        await prisma.usuario.update({
         where: { id: user.id },
         data: {
           intentos_login: 0,
@@ -38,10 +61,12 @@ const login = async (req, res) => {
 
       return res.status(200).json({ 
         message: "Bienvenido",
+        token: token,      // esto es lo que el frontend guardara
         user: { 
             id: user.id,
             email: user.email, 
-            id_rol: user.id_rol 
+            id_rol: user.id_rol, 
+            nombre_usuario: datos_persona
         } 
       });
 
