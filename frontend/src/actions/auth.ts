@@ -61,6 +61,7 @@ export async function getMisDatos() {
       id: payload.id,
       role: payload.id_rol,
       nameUser: payload.nombre_usuario,
+      nameRole: payload.rol_descripcion
     };
   } catch (error) {
     return null;

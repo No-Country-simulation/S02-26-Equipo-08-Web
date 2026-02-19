@@ -33,6 +33,7 @@ model usuario {
   fecha_deshabilitado DateTime? @db.Timestamp(6)
 
   // RELACIÓN: Un usuario tiene una persona
+  rol                 rol       @relation(fields: [id_rol], references: [id])
   persona             persona?  // Relación 1:1 o 1:N (opcional)
 
   @@index([id], map: "idx_usuario_id")
@@ -57,6 +58,7 @@ model persona {
 model rol {
   id          Int    @id @default(autoincrement())
   descripcion String @db.VarChar(45)
+  usuarios    usuario[]
 }
 
 model paciente {
