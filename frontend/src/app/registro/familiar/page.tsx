@@ -39,7 +39,9 @@ export default function RegistroFamiliarPage() {
     getValues,
     formState: { errors },
   } = useForm<RegistroFamiliarForm>({
-    resolver: zodResolver(registroFamiliarSchema),
+    // z.coerce.number() infiere el input como unknown en Zod v3, el cast resuelve el conflicto de tipos
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(registroFamiliarSchema) as any,
     mode: "onTouched",
     defaultValues: {
       email: "",
@@ -291,7 +293,7 @@ export default function RegistroFamiliarPage() {
                   <div>
                     <label className="text-sm font-semibold text-brand-primary block mb-1">Edad</label>
                     <input
-                      {...register("edad", { valueAsNumber: true })}
+                      {...register("edad")}
                       type="number"
                       placeholder="45"
                       className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none transition-colors ${

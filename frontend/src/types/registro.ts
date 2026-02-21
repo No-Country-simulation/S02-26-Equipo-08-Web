@@ -22,11 +22,11 @@ const datosPersonalesSchema = z.object({
     .string()
     .min(5, "La dirección debe tener al menos 5 caracteres")
     .max(1000, "La dirección no puede superar los 1000 caracteres"),
-  edad: z
+  edad: z.coerce
     .number({ invalid_type_error: "La edad debe ser un número" })
     .int("La edad debe ser un número entero")
     .min(18, "Debés ser mayor de 18 años")
-    .max(120, "Edad inválida"),
+    .max(120, "Edad inválida") as z.ZodType<number>,
 });
 
 const datosBancariosSchema = z.object({
@@ -84,8 +84,10 @@ export const registroFamiliarSchema = z
     path: ["confirmarPassword"],
   });
 
-export type RegistroCuidadorForm = z.infer<typeof registroCuidadorSchema>;
-export type RegistroFamiliarForm = z.infer<typeof registroFamiliarSchema>;
+// Nota: z.coerce.number() infiere el input como unknown en Zod v3,
+// por eso sobreescribimos el tipo de edad manualmente para react-hook-form
+export type RegistroCuidadorForm = Omit<z.infer<typeof registroCuidadorSchema>, "edad"> & { edad: number };
+export type RegistroFamiliarForm = Omit<z.infer<typeof registroFamiliarSchema>, "edad"> & { edad: number };
 
 // respuesta del backend
 export interface RegistroResponse {
@@ -93,5 +95,3 @@ export interface RegistroResponse {
   data: { id: number; email: string } | null;
   message: string;
 }
-
-
