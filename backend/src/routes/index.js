@@ -4,6 +4,7 @@
 
 const { Router } = require("express");
 const productoRoutes = require("./producto.routes");
+const registroRoutes = require("./registro.routes");
 
 const router = Router();
 
@@ -12,8 +13,8 @@ const router = Router();
 // van a tener el prefijo /api/productos (el /api se agrega en server.js)
 router.use("/productos", productoRoutes);
 
-// para agregar nuevas rutas, segui este patron:
-// const nuevaRuta = require("./nueva.routes");
-// router.use("/nueva-ruta", nuevaRuta);
+// rutas de registro publico (no requieren autenticacion)
+// POST /api/registro/cuidador y POST /api/registro/familiar
+router.use("/registro", registroRoutes);
 
 module.exports = router;
