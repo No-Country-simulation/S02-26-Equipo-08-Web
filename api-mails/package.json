@@ -1,0 +1,22 @@
+{
+  "name": "api-mails",
+  "version": "1.0.0",
+  "description": "Servicio de envio de emails",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node ./app.js",
+    "dev": "nodemon ./app.js"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "bull": "^4.16.3",
+    "ioredis": "^5.4.1",
+    "nodemailer": "^6.9.15",
+    "nodemon": "^3.1.4"
+  }
+}
