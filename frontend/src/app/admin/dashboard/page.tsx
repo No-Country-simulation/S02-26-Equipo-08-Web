@@ -23,23 +23,15 @@ export default async function PatientDashboard() {
           <h1 className="text-3xl font-bold text-brand-primary">
             Bienvenido, <span className="text-brand-accent">{user.nameUser}</span> 👋
           </h1>
+          
           <p className="text-slate-500 font-medium">
             Panel de {user.role === 1 ? 'Administrador' : 'Cuidador'} | Gestión de Pacientes
           </p>
         </div>
+
         
         <div className="flex gap-3">
-          {/* Botón de Logout: Usa un Form para ejecutar la Server Action de logout */}
-          <form action={logout}>
-            <button 
-              type="submit"
-              className="flex items-center gap-2 bg-white border-2 border-slate-100 text-slate-600 px-4 py-3 rounded-xl font-bold hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer shadow-sm"
-            >
-              <LogOut size={20} />
-              Cerrar Sesión
-            </button>
-          </form>
-
+          
           <button className="flex items-center gap-2 bg-brand-primary hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg cursor-pointer">
             <Plus size={20} className="text-brand-accent" />
             Nuevo Paciente

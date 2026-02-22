@@ -1,37 +1,50 @@
 "use client";
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   Users, 
   UserRound, 
-  FileText, 
-  CreditCard, 
-  Settings, 
   LogOut,
-  X ,
-  Activity
+  X, 
+  Activity,
+  User
 } from 'lucide-react';
 
-import { logout } from '@/src/actions/auth';
+// Importamos tus funciones de auth
+import { getMisDatos, logout } from '@/src/actions/auth';
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
   { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users }
-
 ];
- // { name: 'Informes/Horas', href: '/adm', icon: FileText },
-  //{ name: 'Pagos', href: '#', icon: CreditCard },
-  //{ name: 'Configuración', href: '#', icon: Settings },
 
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) {
   const pathname = usePathname();
+  
+  // 1. Estado para almacenar los datos del usuario
+  const [user, setUser] = useState<any>(null);
 
-const handleLogoutClick = async () => {
-  await logout(); // Llama al Server Action
- // setUser(null);  // Limpia el estado global del UserContext
-};
+  // 2. Efecto para cargar los datos del token al montar el componente
+  useEffect(() => {
+    const cargarInformacion = async () => {
+      try {
+        const datos = await getMisDatos();
+        if (datos) {
+          setUser(datos);
+        }
+      } catch (error) {
+        console.error("Error al obtener datos del usuario:", error);
+      }
+    };
+    cargarInformacion();
+  }, []);
+
+  const handleLogoutClick = async () => {
+    await logout(); 
+  };
 
   return (
     <>
@@ -60,7 +73,7 @@ const handleLogoutClick = async () => {
               <span className="text-xl font-bold tracking-tight text-brand-secondy">
                 PYME<span className="text-brand-accent">Care</span>
               </span>
-              <Activity className='ml-6  text-brand-accent' size={25}/>
+              <Activity className='ml-6 text-brand-accent' size={25}/>
             </div>
             <button onClick={toggleSidebar} className="lg:hidden text-slate-400">
               <X size={24} />
@@ -91,10 +104,29 @@ const handleLogoutClick = async () => {
 
           {/* Footer Sidebar (User info) */}
           <div className="p-4 border-t border-white/10">
+            
+            {/* Sección del Rol del Usuario */}
+            {user && (
+              <div className="flex items-center gap-3 px-4 py-3 text-slate-400 mb-2">
+                <div className="bg-white/5 p-2 rounded-lg">
+                  <User size={18} className="text-brand-accent" />
+                </div>
+                <div className="flex flex-col overflow-hidden">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-brand-accent truncate">
+                    {user.nameRole || 'Usuario'}
+                  </span>
+                  <span className="text-xs text-slate-300 truncate font-medium">
+                    {user.nameUser}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <button
-             onClick={handleLogoutClick}
-              className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:text-brand-accent transition-colors">
-              <LogOut size={20} />
+              onClick={handleLogoutClick}
+              className="flex items-center gap-3 w-full px-4 py-3 text-slate-400 hover:text-brand-accent transition-colors group"
+            >
+              <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
               <span className="font-medium">Cerrar Sesión</span>
             </button>
           </div>

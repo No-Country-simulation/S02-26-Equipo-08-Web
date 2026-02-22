@@ -37,12 +37,17 @@ const login = async (req, res) => {
         ? `${persona.apellido} ${persona.nombre}`
         : "Usuario";
 
+      const nombreRol = user.rol?.descripcion?.toUpperCase() || "Sin rol";
+      console.log("Rol encontrado:", nombreRol);
+      
+
       // 4. Generación del token
       const token = jwt.sign(
         {
           id: user.id,
           id_rol: user.id_rol,
-          nombre_usuario: datos_persona
+          nombre_usuario: datos_persona,
+          rol_descripcion: nombreRol
         },
         process.env.JWT_SECRET, 
         { expiresIn: '8h' }
@@ -83,7 +88,8 @@ const login = async (req, res) => {
             id: user.id,
             email: user.email, 
             id_rol: user.id_rol, 
-            nombre_usuario: datos_persona
+            nombre_usuario: datos_persona,
+            rol_descripcion: nombreRol
         } 
       });
 
