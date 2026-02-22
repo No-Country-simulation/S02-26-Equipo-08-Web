@@ -81,33 +81,57 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-wrap items-center gap-4"
+              className="flex flex-wrap items-start gap-5"
             >
-              <Link
-                href="/registro/cuidador"
-                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-lg shadow-gray-900/10"
-                style={{
-                  fontFamily: "var(--font-inter), 'Inter', sans-serif",
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                }}
-              >
-                <UserRound className="w-4 h-4" />
-                Soy Cuidador
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-              <Link
-                href="/registro/familiar"
-                className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
-                style={{
-                  fontFamily: "var(--font-inter), 'Inter', sans-serif",
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                }}
-              >
-                <HeartHandshake className="w-4 h-4 text-blue-600" />
-                Soy Familiar
-              </Link>
+              <div className="flex flex-col items-center gap-2">
+                <Link
+                  href="/registro/cuidador"
+                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-lg shadow-gray-900/10"
+                  style={{
+                    fontFamily: "var(--font-inter), 'Inter', sans-serif",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  <UserRound className="w-4 h-4" />
+                  Soy Cuidador
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+                <span
+                  className="text-gray-400"
+                  style={{
+                    fontFamily: "var(--font-inter), 'Inter', sans-serif",
+                    fontSize: "0.72rem",
+                    fontWeight: 400,
+                  }}
+                >
+                  Registrate y ofrecé tus servicios
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <Link
+                  href="/registro/familiar"
+                  className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                  style={{
+                    fontFamily: "var(--font-inter), 'Inter', sans-serif",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  <HeartHandshake className="w-4 h-4 text-blue-600" />
+                  Soy Familiar
+                </Link>
+                <span
+                  className="text-gray-400"
+                  style={{
+                    fontFamily: "var(--font-inter), 'Inter', sans-serif",
+                    fontSize: "0.72rem",
+                    fontWeight: 400,
+                  }}
+                >
+                  Buscá un cuidador para tu ser querido
+                </span>
+              </div>
             </motion.div>
 
             {/* Trust indicators */}

@@ -153,7 +153,7 @@ export default function RegistroCuidadorPage() {
   const valores = getValues();
 
   return (
-    <div className="min-h-screen bg-brand-secondary flex flex-col">
+    <div className="min-h-screen bg-brand-secondary flex flex-col" style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}>
       {/* Header */}
       <header className="w-full border-b border-slate-200 bg-white/80 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
