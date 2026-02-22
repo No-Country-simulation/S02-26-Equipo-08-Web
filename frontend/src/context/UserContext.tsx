@@ -1,10 +1,12 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getMisDatos } from '@/src/actions/auth'; // Usamos tu función que sí funciona
 
 interface UserData {
   id: string;
   nameUser: string;
+  nameRole: string; // Agregamos nameRole para que no marque ROJO
   role: string; 
 }
 
@@ -17,43 +19,36 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children, initialUser }: { children: ReactNode, initialUser: UserData | null }) {
-  // Inicializamos el estado directamente con lo que el servidor ya leyó del JWT
   const [user, setUser] = useState<UserData | null>(initialUser);
-  const [loading, setLoading] = useState(!initialUser); // Si no hay initialUser, activamos carga
-  //console.log(" desde contes desde arriba.... user ", user)
- 
+  // Si tenemos initialUser, loading es false. Si no, empezamos cargando.
+  const [loading, setLoading] = useState(!initialUser);
+
   useEffect(() => {
-    // Solo ejecutamos verifySession si el servidor NO nos pasó datos (ej. navegación directa)
-    if (!initialUser) {
-      const verifySession = async () => {
-        try {
-       // console.log("ejecutando getMe....debtreo del try")
-
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-            method: "GET",
-            credentials: "include", 
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            setUser(data.user);
-               console.log(" user desde context ", user);
-         
-          } else {
-            setUser(null);
-          }
-        } catch (error) {
-          setUser(null);
-        } finally {
-          setLoading(false);
-        }
-      };
-      verifySession();
+    // Si ya tenemos el usuario del servidor (initialUser), no hacemos nada
+    if (initialUser) {
+      setLoading(false);
+      return;
     }
+
+    // Solo si no hay initialUser (ej: refresco de página manual), buscamos los datos
+    const verifySession = async () => {
+      try {
+        const data = await getMisDatos(); // Usamos la Server Action en lugar del fetch al puerto 5000
+        if (data) {
+          setUser(data as any);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error verificando sesión:", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    verifySession();
   }, [initialUser]); 
-
-
-
 
   return (
     <UserContext.Provider value={{ user, setUser, loading }}>
@@ -65,6 +60,7 @@ export function UserProvider({ children, initialUser }: { children: ReactNode, i
 export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
+    // Retorno seguro para evitar errores de undefined
     return { user: null, setUser: () => {}, loading: false }; 
   }
   return context;

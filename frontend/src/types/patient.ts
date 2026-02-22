@@ -17,6 +17,7 @@ export interface Patient {
   medicalHistory: string;
   familyContactId: number;
   responsibleFamily:object;
+  estado: { id: number; descripcion: string };
 }
 
 export interface family{
