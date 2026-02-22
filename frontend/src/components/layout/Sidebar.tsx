@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserRound, 
+import {
+  LayoutDashboard,
+  Users,
+  UserRound,
+  Settings,
   LogOut,
-  X, 
+  X,
   Activity,
   User
 } from 'lucide-react';
@@ -18,16 +19,19 @@ import { getMisDatos, logout } from '@/src/actions/auth';
 const menuItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
-  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users }
+  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users },
+  { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings },
 ];
+// { name: 'Informes/Horas', href: '/adm', icon: FileText },
+// { name: 'Pagos', href: '#', icon: CreditCard },
 
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) {
   const pathname = usePathname();
-  
-  // 1. Estado para almacenar los datos del usuario
+
+  // Estado para almacenar los datos del usuario
   const [user, setUser] = useState<any>(null);
 
-  // 2. Efecto para cargar los datos del token al montar el componente
+  // Efecto para cargar los datos del token al montar el componente
   useEffect(() => {
     const cargarInformacion = async () => {
       try {
@@ -43,24 +47,24 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
   }, []);
 
   const handleLogoutClick = async () => {
-    await logout(); 
+    await logout();
   };
 
   return (
     <>
       {/* Overlay para móviles */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={toggleSidebar}
         />
       )}
 
       <aside className={`
-        fixed top-0 left-0 z-50 h-screen w-64 
-        bg-brand-primary text-white 
+        fixed top-0 left-0 z-50 h-screen w-64
+        bg-brand-primary text-white
         transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0
       `}>
         <div className="flex flex-col h-full">
@@ -90,8 +94,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
                   href={item.href}
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
-                    ${isActive 
-                      ? 'bg-brand-accent text-white shadow-lg shadow-red-900/20' 
+                    ${isActive
+                      ? 'bg-brand-accent text-white shadow-lg shadow-red-900/20'
                       : 'hover:bg-white/10 text-slate-400 hover:text-white'}
                   `}
                 >
@@ -104,7 +108,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
 
           {/* Footer Sidebar (User info) */}
           <div className="p-4 border-t border-white/10">
-            
+
             {/* Sección del Rol del Usuario */}
             {user && (
               <div className="flex items-center gap-3 px-4 py-3 text-slate-400 mb-2">
