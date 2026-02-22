@@ -20,20 +20,21 @@ model Producto {
 // modelos del dominio
 // =============================================
 
+model usuario_estado {
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
+}
+
 model usuario {
   id                  Int       @id @default(autoincrement())
   email               String    @unique @db.VarChar(60)
   password_hash       String?   @db.VarChar(500)
   id_rol              Int
-  estado              String    @default("PA") @db.VarChar(3)
-  activo              Int       @default(1) @db.SmallInt
+  id_usuario_estado   Int       @default(1)
   fecha_alta          DateTime? @default(now()) @db.Timestamp(6)
   fecha_ultimo_login  DateTime? @db.Timestamp(6)
   intentos_login      Int       @default(0)
   fecha_deshabilitado DateTime? @db.Timestamp(6)
-
-  // RELACIÓN: Un usuario tiene una persona
-  persona             persona?  // Relación 1:1 o 1:N (opcional)
 
   @@index([id], map: "idx_usuario_id")
 }
@@ -48,9 +49,6 @@ model persona {
   telefono       String @unique @db.VarChar(200)
   edad           Int
 
-  // RELACIÓN: persona pertenece a usuario
-  usuario        usuario @relation(fields: [id_usuario], references: [id])
-
   @@index([apellido, nombre], map: "idx_apellido_nombre")
 }
 
@@ -59,19 +57,24 @@ model rol {
   descripcion String @db.VarChar(45)
 }
 
+model paciente_estado {
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
+}
+
 model paciente {
-  id             Int       @id @default(autoincrement())
-  nombre         String    @db.VarChar(60)
-  apellido       String    @db.VarChar(60)
-  identificacion String    @db.VarChar(45)
-  direccion      String?   @db.VarChar(1000)
-  telefono       String?   @db.VarChar(200)
-  edad           Int?
-  diagnostico    String?   @db.VarChar(500)
-  obra_social    String?   @db.VarChar(100)
-  nro_afiliado   String?   @db.VarChar(50)
-  fecha_ingreso  DateTime  @default(now()) @db.Date
-  activo         Int       @default(1) @db.SmallInt
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(60)
+  apellido            String    @db.VarChar(60)
+  identificacion      String    @db.VarChar(45)
+  direccion           String?   @db.VarChar(1000)
+  telefono            String?   @db.VarChar(200)
+  edad                Int?
+  diagnostico         String?   @db.VarChar(500)
+  obra_social         String?   @db.VarChar(100)
+  nro_afiliado        String?   @db.VarChar(50)
+  fecha_ingreso       DateTime  @default(now()) @db.Date
+  id_paciente_estado  Int       @default(1)
 }
 
 model familiar {

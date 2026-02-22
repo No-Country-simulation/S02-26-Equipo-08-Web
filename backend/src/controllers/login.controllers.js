@@ -1,22 +1,16 @@
 // 1. Importaciones van al principio
 require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const prisma = new PrismaClient();
 
 const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     // 1. Buscar usuario por email
-    // IMPORTANTE: Aquí definiste la variable como 'user'
     const user = await prisma.usuario.findUnique({
       where: { email },
-      include: {
-        persona: true
-      }
     });
 
     if (!user) {
@@ -25,8 +19,8 @@ const login = async (req, res) => {
 
     // 2. Verificar si está bloqueado
     if (user.fecha_deshabilitado) {
-      return res.status(403).json({ 
-        message: "Cuenta bloqueada. Demasiados intentos fallidos. Contacte a soporte." 
+      return res.status(403).json({
+        message: "Cuenta bloqueada. Demasiados intentos fallidos. Contacte a soporte."
       });
     }
 
@@ -34,8 +28,13 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (isMatch) {
-      const datos_persona = user.persona
-        ? `${user.persona.apellido} ${user.persona.nombre}` 
+      // Obtener persona asociada por id_usuario (sin relación Prisma)
+      const persona = await prisma.persona.findUnique({
+        where: { id_usuario: user.id },
+      });
+
+      const datos_persona = persona
+        ? `${persona.apellido} ${persona.nombre}`
         : "Usuario";
 
       // 4. Generación del token

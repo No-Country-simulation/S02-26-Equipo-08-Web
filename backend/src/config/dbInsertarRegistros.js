@@ -118,11 +118,63 @@ async function preCargarEstadosGuardia() {
     }
 }
 
+async function preCargarEstadosUsuario() {
+    const estadoDb = await prisma.usuario_estado.findFirst()
+
+    if(estadoDb != null){
+        return
+    }
+
+    const estados = [
+        {id: 1, descripcion: 'Pendiente de Aceptar'},
+        {id: 2, descripcion: 'Activo'},
+        {id: 3, descripcion: 'Rechazado'},
+        {id: 4, descripcion: 'Desactivado'},
+    ]
+
+    for await(const estado of estados){
+        const estado_ins = await prisma.usuario_estado.create({
+            data:{
+                id: estado.id,
+                descripcion: estado.descripcion
+            }
+        })
+
+        console.log(`USUARIO ESTADO INS: ${estado_ins}`);
+    }
+}
+
+async function preCargarEstadosPaciente() {
+    const estadoDb = await prisma.paciente_estado.findFirst()
+
+    if(estadoDb != null){
+        return
+    }
+
+    const estados = [
+        {id: 1, descripcion: 'Activo'},
+        {id: 2, descripcion: 'Inactivo'},
+    ]
+
+    for await(const estado of estados){
+        const estado_ins = await prisma.paciente_estado.create({
+            data:{
+                id: estado.id,
+                descripcion: estado.descripcion
+            }
+        })
+
+        console.log(`PACIENTE ESTADO INS: ${estado_ins}`);
+    }
+}
+
 const insertarDatosPreCargados = async () => {
     preCargarRoles()
     preCargarParentezcos()
     preCargarEstadosPedidos()
     preCargarEstadosGuardia()
+    preCargarEstadosUsuario()
+    preCargarEstadosPaciente()
     insertarUsuarios()
     insertarPersonas()
     insertarCuidadores()

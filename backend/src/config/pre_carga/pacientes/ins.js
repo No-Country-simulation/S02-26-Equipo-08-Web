@@ -25,7 +25,7 @@ async function insertarPaciente(paciente) {
         obra_social,
         nro_afiliado,
         fecha_ingreso,
-        activo,
+        id_paciente_estado,
     } = paciente
 
     const pacienteIns = await prisma.paciente.create({
@@ -40,7 +40,7 @@ async function insertarPaciente(paciente) {
             obra_social: obra_social,
             nro_afiliado: nro_afiliado,
             fecha_ingreso: fecha_ingreso,
-            activo: activo,
+            id_paciente_estado: id_paciente_estado ?? 1,
         }
     })
 

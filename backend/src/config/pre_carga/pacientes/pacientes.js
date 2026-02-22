@@ -17,7 +17,7 @@ const pacientes = [
         obra_social: 'OSDE',
         nro_afiliado: 'OSDE-00451234',
         fecha_ingreso: new Date('2025-06-01'),
-        activo: 1,
+        id_paciente_estado: 1,
     },
     {
         nombre: 'Tomas',
@@ -30,7 +30,7 @@ const pacientes = [
         obra_social: 'Swiss Medical',
         nro_afiliado: 'SM-00789456',
         fecha_ingreso: new Date('2025-07-15'),
-        activo: 1,
+        id_paciente_estado: 1,
     },
     {
         nombre: 'Valentina',
@@ -43,7 +43,7 @@ const pacientes = [
         obra_social: 'Galeno',
         nro_afiliado: 'GAL-00234567',
         fecha_ingreso: new Date('2025-09-01'),
-        activo: 1,
+        id_paciente_estado: 1,
     },
     {
         nombre: 'Carmen',
@@ -56,7 +56,7 @@ const pacientes = [
         obra_social: 'PAMI',
         nro_afiliado: 'PAMI-10567890',
         fecha_ingreso: new Date('2026-01-10'),
-        activo: 1,
+        id_paciente_estado: 1,
     },
 ]
 

@@ -23,8 +23,7 @@ async function crearUsuarioDb(tx, datos) {
         email,
         pass,
         id_rol,
-        estado,
-        activo,
+        id_usuario_estado,
     } = datos
 
     const pass_hash = await bcrypt.hash(pass, 10)
@@ -34,8 +33,7 @@ async function crearUsuarioDb(tx, datos) {
             email: email,
             password_hash: pass_hash,
             id_rol: id_rol,
-            estado: estado || 'PA',
-            activo: activo || 0,
+            id_usuario_estado: id_usuario_estado ?? 1,
         }
     })
 

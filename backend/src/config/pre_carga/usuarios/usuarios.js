@@ -10,8 +10,7 @@ const usuarios = [
         edad: 40,
         id_rol: 1,
         pass: '123456',
-        estado: 'A',
-        activo: 1,
+        id_usuario_estado: 2, // Activo
     },
     {
         nombre: 'Valeria',
@@ -23,8 +22,7 @@ const usuarios = [
         edad: 42,
         id_rol: 1,
         pass: '123456',
-        estado: 'A',
-        activo: 1,
+        id_usuario_estado: 2, // Activo
     },
     // --- cuidadores (estados variados) ---
     {
@@ -37,8 +35,7 @@ const usuarios = [
         edad: 30,
         id_rol: 2,
         pass: '123456',
-        estado: 'A',
-        activo: 1,
+        id_usuario_estado: 2, // Activo
     },
     {
         nombre: 'Lucas',
@@ -50,8 +47,7 @@ const usuarios = [
         edad: 22,
         id_rol: 2,
         pass: '123',
-        estado: 'A',
-        activo: 1,
+        id_usuario_estado: 2, // Activo
     },
     {
         nombre: 'Sofia',
@@ -63,8 +59,7 @@ const usuarios = [
         edad: 26,
         id_rol: 2,
         pass: '123456',
-        estado: 'PA',
-        activo: 0,
+        id_usuario_estado: 1, // Pendiente de Aceptar
     },
     {
         nombre: 'Diego',
@@ -76,8 +71,7 @@ const usuarios = [
         edad: 24,
         id_rol: 2,
         pass: '123456',
-        estado: 'R',
-        activo: 0,
+        id_usuario_estado: 3, // Rechazado
     },
     {
         nombre: 'Camila',
@@ -89,8 +83,7 @@ const usuarios = [
         edad: 29,
         id_rol: 2,
         pass: '123456',
-        estado: 'D',
-        activo: 0,
+        id_usuario_estado: 4, // Desactivado
     },
     // --- familiares (estados variados) ---
     {
@@ -103,8 +96,7 @@ const usuarios = [
         edad: 45,
         id_rol: 3,
         pass: '123456',
-        estado: 'A',
-        activo: 1,
+        id_usuario_estado: 2, // Activo
     },
     {
         nombre: 'Jorge',
@@ -116,8 +108,7 @@ const usuarios = [
         edad: 38,
         id_rol: 3,
         pass: '123456',
-        estado: 'A',
-        activo: 1,
+        id_usuario_estado: 2, // Activo
     },
     {
         nombre: 'Roberto',
@@ -129,8 +120,7 @@ const usuarios = [
         edad: 55,
         id_rol: 3,
         pass: '123456',
-        estado: 'PA',
-        activo: 0,
+        id_usuario_estado: 1, // Pendiente de Aceptar
     },
     {
         nombre: 'Laura',
@@ -142,8 +132,7 @@ const usuarios = [
         edad: 50,
         id_rol: 3,
         pass: '123456',
-        estado: 'PA',
-        activo: 0,
+        id_usuario_estado: 1, // Pendiente de Aceptar
     },
     {
         nombre: 'Patricia',
@@ -155,8 +144,7 @@ const usuarios = [
         edad: 48,
         id_rol: 3,
         pass: '123456',
-        estado: 'D',
-        activo: 0,
+        id_usuario_estado: 4, // Desactivado
     },
     {
         nombre: 'Miguel',
@@ -168,8 +156,7 @@ const usuarios = [
         edad: 60,
         id_rol: 3,
         pass: '123456',
-        estado: 'R',
-        activo: 0,
+        id_usuario_estado: 3, // Rechazado
     },
 ]
 

@@ -22,19 +22,17 @@ const insertarUsuario = async (params) => {
             email,
             pass,
             id_rol,
-            estado,
-            activo
+            id_usuario_estado
         } = params
 
         pass_hash = await bcrypt.hash(pass, 10)
-        
+
         const usuario = await prisma.usuario.create({
             data:{
                 email: email,
                 password_hash: pass_hash,
                 id_rol: id_rol,
-                estado: estado,
-                activo: activo
+                id_usuario_estado: id_usuario_estado ?? 1,
             }
         })
 

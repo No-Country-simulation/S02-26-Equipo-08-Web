@@ -37,7 +37,7 @@ const registrarCuidador = async (req, res, next) => {
         const resultado = await prisma.$transaction(async (tx) => {
             const usuario = await crearUsuarioDb(tx, {
                 email, pass, id_rol: 2,
-                estado: 'PA', activo: 0,
+                id_usuario_estado: 1,
             })
 
             const persona = await crearPersonaDb(tx, {
