@@ -10,7 +10,7 @@ import * as z from "zod";
 
 
 
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 
@@ -86,7 +86,7 @@ const { user, setUser}= useUser()
 
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-brand-secondary">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white" style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}>
       
       {/* LADO IZQUIERDO: FORMULARIO */}
       <div className="flex items-center justify-center p-8 md:p-16">
@@ -94,19 +94,33 @@ const { user, setUser}= useUser()
           
           {/* Logo y Encabezado */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-10 h-10 bg-brand-primary flex items-center justify-center rounded-xl shadow-lg">
-                <ShieldCheck className="text-brand-accent" size={24} />
+            <Link href="/" className="flex items-center gap-2.5 mb-6">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center shadow-md">
+                <Heart className="w-4 h-4 text-white" fill="white" />
               </div>
-              <span className="text-2xl font-black tracking-tighter text-brand-primary">
-                PYME<span className="text-brand-accent">Care</span>
+              <span
+                className="text-gray-900 tracking-tight"
+                style={{
+                  fontFamily: "var(--font-playfair), 'Playfair Display', serif",
+                  fontSize: "1.3rem",
+                  fontWeight: 600,
+                }}
+              >
+                Masi-Care
               </span>
-            </div>
-            <h1 className="text-4xl font-bold text-brand-primary tracking-tight">
+            </Link>
+            <h1
+              className="text-gray-900"
+              style={{
+                fontFamily: "var(--font-playfair), 'Playfair Display', serif",
+                fontSize: "2rem",
+                fontWeight: 600,
+              }}
+            >
               Bienvenido de nuevo
             </h1>
-            <p className="text-slate-500 font-medium">
-              Ingresa tus credenciales para gestionar pacientes y cuidadores.
+            <p className="text-gray-500" style={{ fontSize: "0.9rem" }}>
+              Ingresá tus credenciales para acceder a la plataforma.
             </p>
           </div>
 
@@ -118,101 +132,120 @@ const { user, setUser}= useUser()
             }}
            >
             
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-brand-primar] uppercase tracking-wider ml-1">
-                Email Corporativo
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700 ml-0.5">
+                Email
               </label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-accent transition-colors" size={20} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-400 transition-colors" size={17} />
                 <input 
                     {...register("email")}
                   type="email" 
-                  placeholder="ejemplo@pymecare.com"
-                  className={`w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-brand-accent 
-                  focus:ring-4 focus:ring-red-50 transition-all text-brand-primar] font-medium
-                  
+                  placeholder="tu@email.com"
+                  className={`w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400 
+                  focus:ring-2 focus:ring-blue-50 transition-all
                    ${
-                    errors.email ? "border-red-500 ring-1 ring-red-500" : "border-brand-gray focus:ring-2 focus:ring-brand-gold"
+                    errors.email ? "border-red-300 focus:border-red-400 focus:ring-red-50" : ""
                   }`}
                   
                 />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email.message}</p>}
 
                         
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center ml-1">
-                <label className="text-sm font-bold text-brand-primary uppercase tracking-wider">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center ml-0.5">
+                <label className="text-sm font-medium text-gray-700">
                   Contraseña
                 </label>
-                <a href="#" className="text-xs font-bold text-brand-accent hover:underline">¿Olvidaste tu contraseña?</a>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-accent transition-colors" size={20} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-400 transition-colors" size={17} />
                 <input 
                 {...register("password")} 
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className={`w-full pl-12 pr-12 py-4 bg-white border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-brand-accent
-                   focus:ring-4 focus:ring-red-50 transition-all text-brand-primary font-medium 
+                  className={`w-full pl-10 pr-12 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400
+                   focus:ring-2 focus:ring-blue-50 transition-all
                           ${
-                errors.password ? "border-red-500 ring-1 ring-red-500" : "border-brand-gray focus:ring-2 focus:ring-brand-gold"
+                errors.password ? "border-red-300 focus:border-red-400 focus:ring-red-50" : ""
               }`}
                 />
-                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                {errors.password && <p className="text-red-500 text-xs mt-1.5">{errors.password.message}</p>}
 
 
               
                 <button 
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-primary transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
             </div>
 
             <button 
             disabled={isSubmitting}
-            className="w-full bg-brand-primary hover:bg-brand-primary/90 text-white py-4 rounded-2xl font-bold flex items-center justify-center
-             gap-2 transition-all active:scale-[0.98] shadow-xl group cursor-pointer">
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-full font-medium flex items-center justify-center
+             gap-2 transition-all shadow-lg shadow-gray-900/10 group cursor-pointer"
+             style={{ fontSize: "0.9rem" }}
+            >
               {isSubmitting ? "Cargando..." : "Ingresar"}
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform text-brand-accent" />
+              <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
             </button>
           </form>
 
-          <p className="text-center text-slate-500 font-medium">
-            ¿Eres un nuevo cuidador?{' '}
-            <Link href="/register" className="text-brand-accent font-bold hover:underline">
-              Postúlate aquí
-            </Link>
-          </p>
+          <div className="space-y-2 text-center">
+            <p className="text-gray-400" style={{ fontSize: "0.82rem" }}>
+              ¿Sos cuidador?{' '}
+              <Link href="/registro/cuidador" className="text-blue-500 hover:text-blue-600 font-medium transition-colors">
+                Registrate acá
+              </Link>
+            </p>
+            <p className="text-gray-400" style={{ fontSize: "0.82rem" }}>
+              ¿Sos familiar?{' '}
+              <Link href="/registro/familiar" className="text-blue-500 hover:text-blue-600 font-medium transition-colors">
+                Registrate acá
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
 
       {/* LADO DERECHO: BRANDING / VISUAL */}
-      <div className="hidden lg:flex bg-brand-primary relative overflow-hidden items-center justify-center p-12">
+      <div className="hidden lg:flex bg-[#011627] relative overflow-hidden items-center justify-center p-12">
         {/* Decoración geométrica de fondo */}
-        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-brand-accent rounded-full blur-[120px] opacity-20" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-brand-accent rounded-full blur-[120px] opacity-20" />
+        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-blue-500 rounded-full blur-[160px] opacity-15" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 bg-sky-400 rounded-full blur-[140px] opacity-10" />
         
         <div className="relative z-10 max-w-lg text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full
-           text-brand-accent text-sm font-bold backdrop-blur-md">
+           text-blue-400 text-sm font-medium backdrop-blur-md"
+           style={{ fontSize: "0.82rem" }}
+          >
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-accent"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
             </span>
-            Sistema de Gestión v4.0
+            Plataforma de Cuidados Domiciliarios
           </div>
-          <h2 className="text-5xl font-extrabold text-white leading-tight">
-            Digitalizando el cuidado <span className="text-brand-accent">artesanal.</span>
+          <h2
+            className="text-white"
+            style={{
+              fontFamily: "var(--font-playfair), 'Playfair Display', serif",
+              fontSize: "2.5rem",
+              fontWeight: 600,
+              lineHeight: 1.2,
+            }}
+          >
+            Cuidado profesional para quienes más{' '}
+            <span className="bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent">importan.</span>
           </h2>
-          <p className="text-zinc-400 text-lg">
-            Olvídate de los grupos de WhatsApp y las plantillas de Excel. Centraliza informes, pagos y métricas en un solo lugar.
+          <p className="text-gray-400" style={{ fontSize: "0.95rem", lineHeight: 1.7 }}>
+            Gestioná acompañantes terapéuticos, turnos e informes desde un solo lugar. Tranquilidad para toda la familia.
           </p>
         </div>
       </div>
