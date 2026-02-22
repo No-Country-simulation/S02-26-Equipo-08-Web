@@ -27,7 +27,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "MasiCare — Gestión de Cuidados Domiciliarios",
+  title: "PYMECare — Gestión de Cuidados Domiciliarios",
   description: "Plataforma para gestión de acompañantes terapéuticos. Centraliza turnos, informes y pagos.",
 };
 

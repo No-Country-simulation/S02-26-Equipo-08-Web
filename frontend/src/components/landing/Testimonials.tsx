@@ -7,7 +7,7 @@ const testimonials = [
   {
     name: "María López",
     role: "Hija de paciente",
-    text: "Mi mamá tiene 82 años y vive sola. Desde que contratamos Masi-Care, sé que está acompañada por alguien de confianza. Los informes después de cada visita me dan una paz que no tiene precio.",
+    text: "Mi mamá tiene 82 años y vive sola. Desde que contratamos PYMECare, sé que está acompañada por alguien de confianza. Los informes después de cada visita me dan una paz que no tiene precio.",
     stars: 5,
     initials: "ML",
     color: "bg-blue-500",
@@ -15,7 +15,7 @@ const testimonials = [
   {
     name: "Roberto Fernández",
     role: "Esposo de paciente",
-    text: "Mi esposa necesita acompañamiento diario y yo trabajo muchas horas. El equipo de Masi-Care fue increíble asignando a la persona indicada. Se nota que les importa.",
+    text: "Mi esposa necesita acompañamiento diario y yo trabajo muchas horas. El equipo de PYMECare fue increíble asignando a la persona indicada. Se nota que les importa.",
     stars: 5,
     initials: "RF",
     color: "bg-sky-500",
@@ -23,7 +23,7 @@ const testimonials = [
   {
     name: "Carolina Díaz",
     role: "Nieta de paciente",
-    text: "Vivo en otra provincia y mi abuelo está en Buenos Aires. Poder ver los informes de cada guardia me hace sentir que estoy cerca. Masi-Care me devolvió la tranquilidad.",
+    text: "Vivo en otra provincia y mi abuelo está en Buenos Aires. Poder ver los informes de cada guardia me hace sentir que estoy cerca. PYMECare me devolvió la tranquilidad.",
     stars: 5,
     initials: "CD",
     color: "bg-indigo-500",

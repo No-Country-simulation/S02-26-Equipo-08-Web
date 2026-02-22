@@ -106,7 +106,7 @@ const { user, setUser}= useUser()
                   fontWeight: 600,
                 }}
               >
-                Masi-Care
+                PYMECare
               </span>
             </Link>
             <h1

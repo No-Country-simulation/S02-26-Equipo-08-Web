@@ -194,7 +194,7 @@ export default function RegistroFamiliarPage() {
                 fontWeight: 600,
               }}
             >
-              Masi-Care
+              PYMECare
             </span>
           </Link>
 
@@ -281,7 +281,7 @@ export default function RegistroFamiliarPage() {
                   fontWeight: 600,
                 }}
               >
-                Masi-Care
+                PYMECare
               </span>
             </Link>
             <Link

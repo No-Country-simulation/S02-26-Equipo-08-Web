@@ -48,7 +48,7 @@ export function Navbar() {
                 fontWeight: 600,
               }}
             >
-              Masi-Care
+              PYMECare
             </span>
           </a>
 

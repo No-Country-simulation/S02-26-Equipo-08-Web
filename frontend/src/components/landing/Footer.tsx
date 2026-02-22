@@ -23,7 +23,7 @@ const footerLinks: Record<string, FooterLink[]> = {
     { label: "Por qué elegirnos", href: "#por-que" },
   ],
   Empresa: [
-    { label: "Sobre Masi-Care", href: "#hero" },
+    { label: "Sobre PYMECare", href: "#hero" },
     { label: "Contacto", href: "#contacto" },
     { label: "Iniciar Sesión", href: "/login", isRoute: true },
   ],
@@ -49,7 +49,7 @@ export function Footer() {
                   fontWeight: 600,
                 }}
               >
-                Masi-Care
+                PYMECare
               </span>
             </div>
             <p
@@ -123,7 +123,7 @@ export function Footer() {
               fontWeight: 400,
             }}
           >
-            &copy; 2026 Masi-Care. Todos los derechos reservados.
+            &copy; 2026 PYMECare. Todos los derechos reservados.
           </p>
           <p
             className="text-gray-300"

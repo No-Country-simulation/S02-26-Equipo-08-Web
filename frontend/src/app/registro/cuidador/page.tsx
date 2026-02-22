@@ -207,7 +207,7 @@ export default function RegistroCuidadorPage() {
                 fontWeight: 600,
               }}
             >
-              Masi-Care
+              PYMECare
             </span>
           </Link>
 
@@ -294,7 +294,7 @@ export default function RegistroCuidadorPage() {
                   fontWeight: 600,
                 }}
               >
-                Masi-Care
+                PYMECare
               </span>
             </Link>
             <Link
