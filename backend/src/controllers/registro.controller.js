@@ -2,12 +2,10 @@
 // maneja el registro de cuidadores y familiares
 // ambos endpoints son publicos (no requieren autenticacion)
 //
-// NOTA IMPORTANTE: el schema.prisma del proyecto NO coincide con la BD real.
-// Por eso usamos $queryRawUnsafe en lugar de los metodos de Prisma,
-// para trabajar directo con las columnas reales de la BD.
+// Usamos $queryRawUnsafe para trabajar directo con las columnas de la BD.
 //
 // BD real:
-// - usuario: id (autoincrement), email (unique), password_hash, id_rol, estado ('PA'), activo (1)
+// - usuario: id (autoincrement), email (unique), password_hash, id_rol, id_usuario_estado (FK, 1=Pendiente)
 // - persona: id (autoincrement), id_usuario, nombre, apellido, identificacion (unique), direccion, telefono (unique), edad
 // - cuidador: id (autoincrement), id_usuario, cbu, cvu, alias, con_documentacion, id_autorizado_por, fecha_autorizado, fecha_ingreso
 
@@ -69,20 +67,33 @@ const registrarCuidador = async (req, res, next) => {
       });
     }
 
+    // verificar si ya existe una persona con ese teléfono
+    const [telefonoExistente] = await prisma.$queryRawUnsafe(
+      `SELECT id FROM persona WHERE telefono = $1 LIMIT 1`,
+      telefono
+    );
+
+    if (telefonoExistente) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: "Ya existe un usuario registrado con ese número de teléfono.",
+      });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
 
     // transaccion con queries raw para trabajar con la BD real
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. crear usuario
       const [usuario] = await tx.$queryRawUnsafe(
-        `INSERT INTO usuario (email, password_hash, id_rol, estado, activo)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO usuario (email, password_hash, id_rol, id_usuario_estado)
+         VALUES ($1, $2, $3, $4)
          RETURNING id, email`,
         email,
         passwordHash,
-        2,    // rol cuidador
-        'PA', // estado pendiente
-        0     // no activo hasta que admin apruebe
+        2,  // rol cuidador
+        1   // id_usuario_estado 1 = Pendiente de Aceptar
       );
 
       // 2. crear persona
@@ -188,20 +199,33 @@ const registrarFamiliar = async (req, res, next) => {
       });
     }
 
+    // verificar si ya existe una persona con ese teléfono
+    const [telefonoExistente] = await prisma.$queryRawUnsafe(
+      `SELECT id FROM persona WHERE telefono = $1 LIMIT 1`,
+      telefono
+    );
+
+    if (telefonoExistente) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        message: "Ya existe un usuario registrado con ese número de teléfono.",
+      });
+    }
+
     const passwordHash = await bcrypt.hash(password, 10);
 
     // transaccion con queries raw
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. crear usuario
       const [usuario] = await tx.$queryRawUnsafe(
-        `INSERT INTO usuario (email, password_hash, id_rol, estado, activo)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO usuario (email, password_hash, id_rol, id_usuario_estado)
+         VALUES ($1, $2, $3, $4)
          RETURNING id, email`,
         email,
         passwordHash,
-        3,    // rol familiar
-        'PA', // estado pendiente
-        1     // activo desde el registro
+        3,  // rol familiar
+        1   // id_usuario_estado 1 = Pendiente de Aceptar
       );
 
       // 2. crear persona
