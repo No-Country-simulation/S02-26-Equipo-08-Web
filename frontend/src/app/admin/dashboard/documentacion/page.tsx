@@ -13,22 +13,29 @@ import {
   type Documento,
 } from "@/src/actions/documentos";
 
-const rolToAplicaA: Record<number, string> = {
-  2: "cuidador",
-  3: "familiar",
+const rolToAplicaA: Record<string, string> = {
+  "2": "cuidador",
+  "3": "familiar",
 };
 
 export default function DocumentacionPage() {
-  const { user } = useUser() as any;
+  const { user, loading: ctxLoading } = useUser() as any;
   const [tipos, setTipos] = useState<TipoDocumento[]>([]);
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const cargarDatos = useCallback(async () => {
-    if (!user?.id || !user?.role) return;
+    // esperar a que el contexto termine de cargar
+    if (ctxLoading) return;
 
-    const aplica_a = rolToAplicaA[user.role];
+    if (!user?.id) {
+      setError("No se encontró sesión activa.");
+      setLoading(false);
+      return;
+    }
+
+    const aplica_a = rolToAplicaA[String(user.role)];
     if (!aplica_a) {
       setError("Tu rol no requiere carga de documentación.");
       setLoading(false);
@@ -38,7 +45,7 @@ export default function DocumentacionPage() {
     try {
       const [tiposData, docsData] = await Promise.all([
         obtenerTiposDocumento(aplica_a),
-        listarDocumentosUsuario(user.id),
+        listarDocumentosUsuario(Number(user.id)),
       ]);
       setTipos(tiposData);
       setDocumentos(docsData);
@@ -47,7 +54,7 @@ export default function DocumentacionPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, ctxLoading]);
 
   useEffect(() => {
     cargarDatos();
