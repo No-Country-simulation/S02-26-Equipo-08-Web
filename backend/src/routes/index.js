@@ -11,6 +11,7 @@ const cuidadorRoutes = require('./cuidador.routes')
 const auditoriaRoutes = require('./auditoria.routes')
 const registroRoutes = require('./registro.routes')
 const documentoRoutes = require('./documento.routes')
+const pacienteRoutes = require('./paciente.routes')
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/login', loginRoutes)
 router.use('/auditoria', auditoriaRoutes)
 router.use('/registro', registroRoutes)
 router.use('/documentos', documentoRoutes)
+router.use('/pacientes', pacienteRoutes)
 
 // para agregar nuevas rutas, segui este patron:
 // const nuevaRuta = require("./nueva.routes");
