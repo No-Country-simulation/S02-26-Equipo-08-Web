@@ -324,11 +324,81 @@ const obtenerUsuarioPorId = async (req, res, next) => {
     }
 }
 
+// endpoint: cambiar estado de un usuario (Pendiente/Activo/Rechazado/Desactivado)
+const cambiarEstadoUsuario = async (req, res, next) => {
+    const { id } = req.params;
+    const { id_admin, nuevo_estado } = req.body;
+
+    const estadosValidos = [1, 2, 3, 4];
+    const nuevoEstadoInt = parseInt(nuevo_estado);
+
+    if (!nuevo_estado || !estadosValidos.includes(nuevoEstadoInt)) {
+        return res.status(400).json({
+            success: false,
+            data: null,
+            message: 'Estado inválido. Debe ser 1 (Pendiente), 2 (Activo), 3 (Rechazado) o 4 (Desactivado).'
+        });
+    }
+
+    try {
+        const usuarioActual = await prisma.usuario.findUnique({
+            where: { id: parseInt(id) },
+            select: { id_usuario_estado: true, email: true }
+        });
+
+        if (!usuarioActual) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Usuario no encontrado.'
+            });
+        }
+
+        const estadoAnterior = usuarioActual.id_usuario_estado;
+
+        const usuarioActualizado = await prisma.usuario.update({
+            where: { id: parseInt(id) },
+            data: { id_usuario_estado: nuevoEstadoInt }
+        });
+
+        try {
+            await prisma.log_auditoria.create({
+                data: {
+                    id_usuario: parseInt(id_admin) || 0,
+                    accion: 'CAMBIO_ESTADO',
+                    tabla_afectada: 'usuario',
+                    valor_anterior: { id_usuario_estado: estadoAnterior },
+                    valor_nuevo: { id_usuario_estado: nuevoEstadoInt, id_objetivo: parseInt(id) },
+                    ip_direccion: req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1'
+                }
+            });
+        } catch (auditError) {
+            console.error('Error grabando auditoría de cambio de estado:', auditError);
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: usuarioActualizado.id,
+                id_usuario_estado: usuarioActualizado.id_usuario_estado
+            },
+            message: 'Estado del usuario actualizado correctamente.'
+        });
+    } catch (error) {
+        console.error(`cambiarEstadoUsuario error: ${error}`);
+        if (error.code === 'P2025') {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        }
+        next(error);
+    }
+};
+
 module.exports = {
     buscarUsuarioEmailDb,
     crearUsuarioDb,
     buscarUsuarioEmail,
     desbloquearUsuario,
     listarUsuarios,
-    obtenerUsuarioPorId
+    obtenerUsuarioPorId,
+    cambiarEstadoUsuario
 };
