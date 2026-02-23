@@ -5,6 +5,7 @@
 // esto debe ir al principio de todo, antes de cualquier otra importacion
 require("dotenv").config();
 
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const routes = require("./routes");
@@ -25,6 +26,9 @@ app.use(cors({
 
 // express.json: permite recibir datos en formato json en el body de las peticiones
 app.use(express.json());
+
+// sirve los archivos subidos (documentos) de forma estatica
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // -- rutas --
 
