@@ -107,10 +107,16 @@ export default function PacientesPage() {
       diagnostico: p.diagnostico || "",
       obra_social: p.obra_social || "",
       nro_afiliado: p.nro_afiliado || "",
-      id_parentesco: 1,
+      id_parentesco: p.id_parentesco || 1,
     });
     setEditandoId(p.id);
     setShowForm(true);
+    // Cargar docs del paciente para mostrar en el formulario
+    if (!docsMap[p.id]) {
+      listarDocumentosPaciente(p.id).then((docs) => {
+        setDocsMap((prev) => ({ ...prev, [p.id]: docs }));
+      });
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -342,7 +348,7 @@ export default function PacientesPage() {
                 onChange={(e) => setForm({ ...form, nro_afiliado: e.target.value })}
               />
             </div>
-            {!editandoId && parentescos.length > 0 && (
+            {parentescos.length > 0 && (
               <div>
                 <label className={labelStyle}>Parentesco</label>
                 <select
@@ -376,11 +382,100 @@ export default function PacientesPage() {
               {editandoId ? "Guardar cambios" : "Crear paciente"}
             </button>
           </div>
+
+          {/* Documentación inline durante edición */}
+          {editandoId && (
+            <div className="border-t border-gray-100 pt-5 mt-2 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <FileText size={14} />
+                Documentación del paciente
+                {docsMap[editandoId] && (
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
+                    {docsMap[editandoId].length} subido(s)
+                  </span>
+                )}
+              </h3>
+              {tiposDocPaciente.map((tipo) => {
+                const docExistente = docsMap[editandoId]?.find(
+                  (d) => d.id_tipo_documento === tipo.id
+                );
+                const key = `${editandoId}-${tipo.id}`;
+                const isUploading = uploadingDoc[key];
+
+                return (
+                  <div
+                    key={tipo.id}
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {docExistente ? (
+                        <CheckCircle2 size={16} className="text-green-500 shrink-0" />
+                      ) : (
+                        <AlertCircle size={16} className="text-gray-300 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">
+                          {tipo.descripcion}
+                          {tipo.obligatorio && <span className="text-red-400 ml-1">*</span>}
+                        </p>
+                        {docExistente && (
+                          <p className="text-xs text-gray-400 truncate">
+                            {docExistente.nombre_archivo}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {docExistente ? (
+                        <>
+                          <a
+                            href={`${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "")}/${docExistente.ruta_archivo}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-all"
+                            title="Ver"
+                          >
+                            <Image size={14} />
+                          </a>
+                          <button
+                            onClick={() => handleDeleteDoc(editandoId, docExistente.id)}
+                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 cursor-pointer transition-all">
+                          {isUploading ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Upload size={12} />
+                          )}
+                          Subir
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUploadDoc(editandoId, tipo.id, file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Buscador */}
-      {pacientes.length > 0 && (
+      {/* Buscador — oculto durante edición */}
+      {pacientes.length > 0 && !editandoId && (
         <div className="relative">
           <Search
             size={16}
@@ -396,8 +491,8 @@ export default function PacientesPage() {
         </div>
       )}
 
-      {/* Lista */}
-      {loading ? (
+      {/* Lista — oculta durante edición */}
+      {editandoId ? null : loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 size={24} className="animate-spin text-blue-500" />
         </div>

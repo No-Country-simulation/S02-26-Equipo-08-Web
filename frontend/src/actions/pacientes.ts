@@ -33,6 +33,7 @@ export interface Paciente {
   nro_afiliado?: string;
   fecha_ingreso?: string;
   estado?: string;
+  id_parentesco?: number;
   parentesco?: string;
 }
 

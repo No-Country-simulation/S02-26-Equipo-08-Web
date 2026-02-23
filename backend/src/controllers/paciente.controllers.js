@@ -23,6 +23,7 @@ const listarPacientesPorFamiliar = async (req, res, next) => {
                 p.nro_afiliado,
                 p.fecha_ingreso,
                 pe.descripcion AS estado,
+                f.id_parentesco,
                 par.descripcion AS parentesco
             FROM familiar f
             JOIN paciente p ON p.id = f.id_paciente
