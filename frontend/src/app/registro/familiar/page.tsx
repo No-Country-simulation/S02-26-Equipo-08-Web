@@ -191,11 +191,11 @@ export default function RegistroFamiliarPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col lg:flex-row bg-white"
+      className="h-screen flex flex-col lg:flex-row bg-white overflow-hidden"
       style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}
     >
       {/* Panel izquierdo - Branding (solo desktop) */}
-      <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] bg-[#011627] relative overflow-hidden flex-col justify-between p-10 sticky top-0 h-screen overflow-y-auto">
+      <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] bg-[#011627] relative overflow-hidden flex-col justify-between p-10">
         <div className="absolute top-[-20%] right-[-30%] w-96 h-96 bg-blue-500 rounded-full blur-[160px] opacity-15" />
         <div className="absolute bottom-[-20%] left-[-20%] w-80 h-80 bg-sky-400 rounded-full blur-[140px] opacity-10" />
 
@@ -284,7 +284,7 @@ export default function RegistroFamiliarPage() {
       </div>
 
       {/* Panel derecho - Formulario */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Header mobile */}
         <header className="lg:hidden w-full border-b border-gray-100 bg-white">
           <div className="px-6 py-4 flex items-center justify-between">
