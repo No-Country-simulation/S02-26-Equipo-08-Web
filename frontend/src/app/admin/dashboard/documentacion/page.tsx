@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { FileCheck, AlertCircle, Loader2, CheckCircle2, Clock } from "lucide-react";
-import { useUser } from "@/src/context/UserContext";
 import FileUpload from "@/src/components/documentos/FileUpload";
 import {
   obtenerTiposDocumento,
@@ -12,6 +11,7 @@ import {
   type TipoDocumento,
   type Documento,
 } from "@/src/actions/documentos";
+import { getMisDatos } from "@/src/actions/auth";
 
 const rolToAplicaA: Record<string, string> = {
   "2": "cuidador",
@@ -19,33 +19,38 @@ const rolToAplicaA: Record<string, string> = {
 };
 
 export default function DocumentacionPage() {
-  const { user, loading: ctxLoading } = useUser() as any;
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<number | null>(null);
   const [tipos, setTipos] = useState<TipoDocumento[]>([]);
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const cargarDatos = useCallback(async () => {
-    // esperar a que el contexto termine de cargar
-    if (ctxLoading) return;
-
-    if (!user?.id) {
-      setError("No se encontró sesión activa.");
-      setLoading(false);
-      return;
-    }
-
-    const aplica_a = rolToAplicaA[String(user.role)];
-    if (!aplica_a) {
-      setError("Tu rol no requiere carga de documentación.");
-      setLoading(false);
-      return;
-    }
-
     try {
+      // Obtener datos frescos del token (no del contexto React)
+      const datos = await getMisDatos();
+      if (!datos?.id) {
+        setError("No se encontró sesión activa.");
+        setLoading(false);
+        return;
+      }
+
+      const id = Number(datos.id);
+      const role = Number(datos.role);
+      setUserId(id);
+      setUserRole(role);
+
+      const aplica_a = rolToAplicaA[String(role)];
+      if (!aplica_a) {
+        setError("Tu rol no requiere carga de documentación.");
+        setLoading(false);
+        return;
+      }
+
       const [tiposData, docsData] = await Promise.all([
         obtenerTiposDocumento(aplica_a),
-        listarDocumentosUsuario(Number(user.id)),
+        listarDocumentosUsuario(id),
       ]);
       setTipos(tiposData);
       setDocumentos(docsData);
@@ -54,36 +59,35 @@ export default function DocumentacionPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, user?.role, ctxLoading]);
+  }, []);
 
   useEffect(() => {
     cargarDatos();
   }, [cargarDatos]);
 
   const handleUpload = async (file: File, idTipoDocumento: number): Promise<boolean> => {
-    if (!user?.id) return false;
+    if (!userId) return false;
 
     const formData = new FormData();
     formData.append("archivo", file);
     formData.append("id_tipo_documento", String(idTipoDocumento));
-    formData.append("id_usuario", String(user.id));
-    formData.append("subido_por", String(user.id));
+    formData.append("id_usuario", String(userId));
+    formData.append("subido_por", String(userId));
 
     const res = await subirDocumento(formData);
     if (res.success) {
-      // Recargar documentos
-      const docsActualizados = await listarDocumentosUsuario(user.id);
+      const docsActualizados = await listarDocumentosUsuario(userId);
       setDocumentos(docsActualizados);
     }
     return res.success;
   };
 
   const handleDelete = async (idDocumento: number): Promise<boolean> => {
-    if (!user?.id) return false;
+    if (!userId) return false;
 
     const res = await eliminarDocumento(idDocumento);
     if (res.success) {
-      const docsActualizados = await listarDocumentosUsuario(user.id);
+      const docsActualizados = await listarDocumentosUsuario(userId);
       setDocumentos(docsActualizados);
     }
     return res.success;
@@ -129,7 +133,7 @@ export default function DocumentacionPage() {
           </h1>
           <p className="text-gray-500 mt-1">
             Subí tu documentación para completar tu perfil.
-            {user?.role === 2 && " Los documentos obligatorios son necesarios para ser aprobado."}
+            {userRole === 2 && " Los documentos obligatorios son necesarios para ser aprobado."}
           </p>
         </div>
 
