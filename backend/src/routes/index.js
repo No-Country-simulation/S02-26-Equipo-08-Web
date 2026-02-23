@@ -6,9 +6,10 @@ const { Router } = require("express");
 const productoRoutes = require("./producto.routes");
 const usuarioRoutes = require('./usuario.routes')
 const familiarRoutes = require('./familiar.routes')
-const cuidadorRoutes = require('./cuidador.routes')
 const loginRoutes = require('./login.routes')
+const cuidadorRoutes = require('./cuidador.routes')
 const auditoriaRoutes = require('./auditoria.routes')
+const registroRoutes = require('./registro.routes')
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/familiares', familiarRoutes)
 router.use('/cuidadores', cuidadorRoutes)
 router.use('/login', loginRoutes)
 router.use('/auditoria', auditoriaRoutes)
+router.use('/registro', registroRoutes)
 
 // para agregar nuevas rutas, segui este patron:
 // const nuevaRuta = require("./nueva.routes");

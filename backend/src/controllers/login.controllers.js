@@ -37,7 +37,8 @@ const login = async (req, res) => {
         ? `${persona.apellido} ${persona.nombre}`
         : "Usuario";
 
-      const nombreRol = user.rol?.descripcion?.toUpperCase() || "Sin rol";
+      const rolDb = await prisma.rol.findUnique({ where: { id: user.id_rol } });
+      const nombreRol = rolDb?.descripcion || "Sin rol";
       console.log("Rol encontrado:", nombreRol);
       
 

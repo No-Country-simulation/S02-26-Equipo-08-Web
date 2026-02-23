@@ -17,7 +17,11 @@ const app = express();
 // -- middlewares globales --
 
 // cors: permite que el frontend (que corre en otro puerto) pueda hacer peticiones al backend
-app.use(cors());
+// credentials: true es necesario para que el browser acepte cookies HttpOnly con fetch credentials:"include"
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:8000'],
+  credentials: true,
+}));
 
 // express.json: permite recibir datos en formato json en el body de las peticiones
 app.use(express.json());
