@@ -204,7 +204,7 @@ export default function RegistroCuidadorPage() {
       style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}
     >
       {/* Panel izquierdo - Branding (solo desktop) */}
-      <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] bg-[#011627] relative overflow-hidden flex-col justify-between p-10">
+      <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] bg-[#011627] relative overflow-hidden flex-col justify-between p-10 sticky top-0 h-screen overflow-y-auto">
         <div className="absolute top-[-20%] right-[-30%] w-96 h-96 bg-blue-500 rounded-full blur-[160px] opacity-15" />
         <div className="absolute bottom-[-20%] left-[-20%] w-80 h-80 bg-sky-400 rounded-full blur-[140px] opacity-10" />
 
