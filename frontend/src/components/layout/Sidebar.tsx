@@ -10,20 +10,32 @@ import {
   LogOut,
   X,
   Activity,
-  User
+  User,
+  FileCheck,
+  Heart
 } from 'lucide-react';
 
 // Importamos tus funciones de auth
 import { getMisDatos, logout } from '@/src/actions/auth';
 
-const menuItems = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
-  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users },
-  { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings },
-];
-// { name: 'Informes/Horas', href: '/adm', icon: FileText },
-// { name: 'Pagos', href: '#', icon: CreditCard },
+// Menú según rol: 1=Admin, 2=Cuidador, 3=Familiar
+const menuByRole: Record<number, { name: string; href: string; icon: any }[]> = {
+  1: [ // Admin
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
+    { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users },
+    { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings },
+  ],
+  2: [ // Cuidador
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Mi Documentación', href: '/admin/dashboard/documentacion', icon: FileCheck },
+  ],
+  3: [ // Familiar
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Mi Documentación', href: '/admin/dashboard/documentacion', icon: FileCheck },
+    { name: 'Mis Pacientes', href: '/admin/dashboard/pacientes', icon: Heart },
+  ],
+};
 
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) {
   const pathname = usePathname();
@@ -86,8 +98,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
 
           {/* Navegación */}
           <nav className="flex-1 px-4 space-y-2 mt-4">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href;
+            {(menuByRole[user?.role] || menuByRole[1]).map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}

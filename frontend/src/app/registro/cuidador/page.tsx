@@ -21,7 +21,13 @@ import {
   Heart,
   Check,
   HeartHandshake,
+  FileCheck,
+  Upload,
+  FileText,
+  Image,
+  AlertCircle,
 } from "lucide-react";
+import { obtenerTiposDocumento, subirDocumento, type TipoDocumento } from "@/src/actions/documentos";
 import { registroCuidadorSchema, type RegistroCuidadorForm } from "@/src/types/registro";
 import { registrarCuidadorAction } from "@/src/actions/registro";
 
@@ -29,6 +35,7 @@ const PASOS = [
   { titulo: "Cuenta", descripcion: "Email y contraseña", icon: Mail },
   { titulo: "Datos Personales", descripcion: "Tu información básica", icon: User },
   { titulo: "Datos Bancarios", descripcion: "Opcional — podés completarlo después", icon: CreditCard },
+  { titulo: "Documentación", descripcion: "Opcional — podés subirla después", icon: FileCheck },
   { titulo: "Confirmación", descripcion: "Revisá y confirmá", icon: CheckCircle2 },
 ];
 
@@ -65,19 +72,27 @@ export default function RegistroCuidadorPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [tiposDoc, setTiposDoc] = useState<TipoDocumento[]>([]);
+  const [archivosSeleccionados, setArchivosSeleccionados] = useState<Record<number, File>>({});
+  const [docUploadStatus, setDocUploadStatus] = useState<Record<number, "idle" | "uploading" | "success" | "error">>({});
 
   // campos a validar en cada paso
   const camposPorPaso: (keyof RegistroCuidadorForm)[][] = [
     ["email", "password", "confirmarPassword"],
     ["nombre", "apellido", "identificacion", "telefono", "direccion", "edad"],
     ["cbu", "cvu", "alias"], // opcionales
+    [], // documentacion, no valida campos de form
     [], // confirmacion, no valida campos nuevos
   ];
 
   const avanzar = async () => {
     const campos = camposPorPaso[paso];
-    // el paso 2 (bancarios) es opcional, no validamos
-    if (paso === 2) {
+    // pasos opcionales: bancarios (2) y documentación (3)
+    if (paso === 2 || paso === 3) {
+      // al entrar al paso de documentación, cargar tipos
+      if (paso === 2) {
+        obtenerTiposDocumento("cuidador").then(setTiposDoc);
+      }
       setPaso(paso + 1);
       return;
     }
@@ -524,8 +539,88 @@ export default function RegistroCuidadorPage() {
                     </div>
                   )}
 
-                  {/* PASO 3: Confirmación */}
+                  {/* PASO 3: Documentación (opcional) */}
                   {paso === 3 && (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4 text-blue-700" style={{ fontSize: "0.82rem", lineHeight: 1.6 }}>
+                        Seleccioná los archivos que quieras subir ahora. Si preferís, podés hacerlo después desde <span className="font-semibold">&quot;Mi Documentación&quot;</span> en tu panel.
+                      </div>
+
+                      {tiposDoc.map((tipo) => {
+                        const archivo = archivosSeleccionados[tipo.id];
+                        const uploadStatus = docUploadStatus[tipo.id] || "idle";
+                        return (
+                          <div key={tipo.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
+                              <span className="font-medium text-sm text-gray-800 truncate">{tipo.descripcion}</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                tipo.obligatorio ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                              }`}>
+                                {tipo.obligatorio ? "Obligatorio" : "Opcional"}
+                              </span>
+                            </div>
+                            <div className="p-4">
+                              {archivo ? (
+                                <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+                                  uploadStatus === "success" ? "bg-green-50 border-green-100" : "bg-blue-50 border-blue-100"
+                                }`}>
+                                  {uploadStatus === "success" ? (
+                                    <CheckCircle2 size={18} className="text-green-600 shrink-0" />
+                                  ) : archivo.name.endsWith(".pdf") ? (
+                                    <FileText size={18} className="text-red-500 shrink-0" />
+                                  ) : (
+                                    <Image size={18} className="text-blue-500 shrink-0" />
+                                  )}
+                                  <span className="text-sm text-gray-700 truncate flex-1">{archivo.name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nuevos = { ...archivosSeleccionados };
+                                      delete nuevos[tipo.id];
+                                      setArchivosSeleccionados(nuevos);
+                                      const nuevoStatus = { ...docUploadStatus };
+                                      delete nuevoStatus[tipo.id];
+                                      setDocUploadStatus(nuevoStatus);
+                                    }}
+                                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                  >
+                                    Quitar
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-all">
+                                  <Upload size={20} className="text-gray-400" />
+                                  <span className="text-sm text-gray-500">
+                                    <span className="text-blue-600 font-medium">Seleccioná</span> un archivo
+                                  </span>
+                                  <span className="text-[11px] text-gray-400">PDF, JPG, PNG o WebP · Máx 5MB</span>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        if (file.size > 5 * 1024 * 1024) {
+                                          alert("El archivo supera los 5MB.");
+                                          return;
+                                        }
+                                        setArchivosSeleccionados({ ...archivosSeleccionados, [tipo.id]: file });
+                                      }
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* PASO 4: Confirmación */}
+                  {paso === 4 && (
                     <div className="space-y-5">
                       <div className="bg-gray-50 rounded-xl p-5 space-y-3" style={{ fontSize: "0.85rem" }}>
                         <h3 className="font-semibold text-gray-900 text-sm">Resumen de tu registro</h3>
@@ -546,6 +641,14 @@ export default function RegistroCuidadorPage() {
                             <>
                               <span className="text-gray-400">Alias bancario</span>
                               <span className="font-medium text-gray-700">{valores.alias}</span>
+                            </>
+                          )}
+                          {Object.keys(archivosSeleccionados).length > 0 && (
+                            <>
+                              <span className="text-gray-400">Documentos</span>
+                              <span className="font-medium text-gray-700">
+                                {Object.keys(archivosSeleccionados).length} archivo(s) seleccionado(s)
+                              </span>
                             </>
                           )}
                         </div>
