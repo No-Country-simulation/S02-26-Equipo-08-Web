@@ -26,7 +26,7 @@ const preCargarRoles = async () =>{
     ]
 
         for await (const rol of roles) {
-        const rol_ins = prisma.rol.create({
+        const rol_ins = await prisma.rol.create({
             data: {
                 id: rol.id,
                 descripcion: rol.descripcion

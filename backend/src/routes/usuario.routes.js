@@ -4,7 +4,8 @@ const {
     buscarUsuarioEmail,
     desbloquearUsuario,
     listarUsuarios,
-    obtenerUsuarioPorId
+    obtenerUsuarioPorId,
+    cambiarEstadoUsuario
 } = require('../controllers/usuario.controllers')
 
 const router = Router();
@@ -16,6 +17,7 @@ router.get('/listar', listarUsuarios)
  * Se usa PATCH ya que es una actualización parcial de los datos del usuario
  */
 router.patch('/desbloquear/:id', desbloquearUsuario);
+router.patch('/cambiarEstado/:id', cambiarEstadoUsuario);
 router.get('/:id', obtenerUsuarioPorId)   // siempre al final (catch-all por el :id)
 
 module.exports = router

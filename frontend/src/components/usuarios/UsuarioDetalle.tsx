@@ -10,18 +10,18 @@ import {
     FileCheck,
     Users,
     UserX,
-    Settings,
+    UserCheck,
     Clock,
     AlertTriangle,
 } from "lucide-react";
 import type { UsuarioDetalle, DatosCuidador, DatosFamiliar } from "@/src/types/usuario";
 
-// mapeo de estados a etiquetas y colores (consistente con el listado)
+// mapeo de estados a etiquetas y colores (keys = descripcion exacta de tabla usuario_estado)
 const ESTADOS: Record<string, { label: string; color: string }> = {
-    A: { label: "Activo", color: "bg-emerald-100 text-emerald-700" },
-    PA: { label: "Pendiente", color: "bg-amber-100 text-amber-700" },
-    D: { label: "Deshabilitado", color: "bg-red-100 text-red-700" },
-    R: { label: "Rechazado", color: "bg-slate-100 text-slate-600" },
+    "Activo": { label: "Activo", color: "bg-emerald-100 text-emerald-700" },
+    "Pendiente de Aceptar": { label: "Pendiente", color: "bg-amber-100 text-amber-700" },
+    "Desactivado": { label: "Desactivado", color: "bg-slate-100 text-slate-600" },
+    "Rechazado": { label: "Rechazado", color: "bg-red-100 text-red-700" },
 };
 
 const ROLES: Record<number, { label: string; color: string }> = {
@@ -33,9 +33,7 @@ const ROLES: Record<number, { label: string; color: string }> = {
 interface UsuarioDetalleProps {
     usuario: UsuarioDetalle;
     onBack?: () => void;
-    // callbacks para acciones futuras (deshabilitar, gestionar, etc.)
-    onDeshabilitar?: (id: number) => void;
-    onGestionar?: (id: number) => void;
+    onCambiarEstado?: (id: number, nuevoEstado: number, accion: string) => void;
 }
 
 function formatFecha(fecha: string | null): string {
@@ -141,7 +139,61 @@ function SeccionFamiliar({ datos }: { datos: DatosFamiliar[] }) {
     );
 }
 
-export default function UsuarioDetalleComponent({ usuario, onBack, onDeshabilitar, onGestionar }: UsuarioDetalleProps) {
+// botones de accion contextuales segun el estado del usuario
+function BotonesAccion({ usuario, onCambiarEstado }: { usuario: UsuarioDetalle; onCambiarEstado?: (id: number, nuevoEstado: number, accion: string) => void }) {
+    if (!onCambiarEstado) return null;
+
+    const { estado } = usuario;
+
+    if (estado === "Pendiente de Aceptar") {
+        return (
+            <>
+                <button
+                    onClick={() => onCambiarEstado(usuario.id, 2, "Aceptar")}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors cursor-pointer"
+                >
+                    <UserCheck size={16} />
+                    Aceptar
+                </button>
+                <button
+                    onClick={() => onCambiarEstado(usuario.id, 3, "Rechazar")}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                >
+                    <UserX size={16} />
+                    Rechazar
+                </button>
+            </>
+        );
+    }
+
+    if (estado === "Activo") {
+        return (
+            <button
+                onClick={() => onCambiarEstado(usuario.id, 4, "Desactivar")}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+            >
+                <UserX size={16} />
+                Desactivar
+            </button>
+        );
+    }
+
+    if (estado === "Rechazado" || estado === "Desactivado") {
+        return (
+            <button
+                onClick={() => onCambiarEstado(usuario.id, 2, "Activar")}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors cursor-pointer"
+            >
+                <UserCheck size={16} />
+                Activar
+            </button>
+        );
+    }
+
+    return null;
+}
+
+export default function UsuarioDetalleComponent({ usuario, onBack, onCambiarEstado }: UsuarioDetalleProps) {
     const estadoInfo = ESTADOS[usuario.estado] || { label: usuario.estado, color: "bg-gray-100 text-gray-600" };
     const rolInfo = ROLES[usuario.id_rol] || { label: "Sin rol", color: "bg-gray-100 text-gray-600" };
     const nombreCompleto = usuario.nombre && usuario.apellido
@@ -162,26 +214,9 @@ export default function UsuarioDetalleComponent({ usuario, onBack, onDeshabilita
                     </button>
                 )}
 
-                {/* Acciones rapidas (preparadas para futuras tareas) */}
+                {/* Acciones contextuales segun estado */}
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => onGestionar?.(usuario.id)}
-                        disabled={!onGestionar}
-                        title="Gestionar usuario"
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-accent text-white rounded-lg text-sm font-medium hover:bg-brand-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        <Settings size={16} />
-                        Gestionar
-                    </button>
-                    <button
-                        onClick={() => onDeshabilitar?.(usuario.id)}
-                        disabled={!onDeshabilitar}
-                        title="Deshabilitar usuario"
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        <UserX size={16} />
-                        Deshabilitar
-                    </button>
+                    <BotonesAccion usuario={usuario} onCambiarEstado={onCambiarEstado} />
                 </div>
             </div>
 

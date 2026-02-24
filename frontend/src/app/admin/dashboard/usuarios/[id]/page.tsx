@@ -2,18 +2,29 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { UserX } from "lucide-react";
-import { obtenerUsuario } from "@/src/actions/usuarios";
+import { toast } from "sonner";
+import { obtenerUsuario, cambiarEstadoUsuarioAction } from "@/src/actions/usuarios";
 import UsuarioDetalleComponent from "@/src/components/usuarios/UsuarioDetalle";
+import ConfirmModal from "@/src/components/usuarios/ConfirmModal";
+import { useUser } from "@/src/context/UserContext";
 import type { UsuarioDetalle } from "@/src/types/usuario";
 
 export default function UsuarioDetallePage() {
     const params = useParams();
     const router = useRouter();
+    const { user } = useUser();
     const id = Number(params.id);
 
     const [usuario, setUsuario] = useState<UsuarioDetalle | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // modal de confirmacion
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalTitulo, setModalTitulo] = useState("");
+    const [modalMensaje, setModalMensaje] = useState("");
+    const [accionPendiente, setAccionPendiente] = useState<{ nuevoEstado: number } | null>(null);
+    const [loadingAccion, setLoadingAccion] = useState(false);
 
     useEffect(() => {
         if (isNaN(id)) {
@@ -39,6 +50,39 @@ export default function UsuarioDetallePage() {
 
     const handleVolver = () => {
         router.push("/admin/dashboard/usuarios");
+    };
+
+    const handleCambiarEstado = (userId: number, nuevoEstado: number, accion: string) => {
+        const nombre = usuario?.nombre && usuario?.apellido
+            ? `${usuario.nombre} ${usuario.apellido}`
+            : usuario?.email ?? "este usuario";
+        setModalTitulo(`${accion} usuario`);
+        setModalMensaje(`¿Estás seguro de que querés ${accion.toLowerCase()} a ${nombre}?`);
+        setAccionPendiente({ nuevoEstado });
+        setModalOpen(true);
+    };
+
+    const handleConfirmar = async () => {
+        if (!accionPendiente) return;
+        setLoadingAccion(true);
+        const result = await cambiarEstadoUsuarioAction(
+            id,
+            accionPendiente.nuevoEstado,
+            parseInt(user?.id ?? "0")
+        );
+        setLoadingAccion(false);
+        setModalOpen(false);
+        setAccionPendiente(null);
+        if (result.success) {
+            toast.success(result.message);
+            // recargar datos del usuario
+            const actualizado = await obtenerUsuario(id);
+            if (actualizado.success && actualizado.data) {
+                setUsuario(actualizado.data);
+            }
+        } else {
+            toast.error(result.message);
+        }
     };
 
     // estado: cargando
@@ -77,9 +121,15 @@ export default function UsuarioDetallePage() {
             <UsuarioDetalleComponent
                 usuario={usuario}
                 onBack={handleVolver}
-                // los callbacks de acciones se conectarán en las próximas tareas
-                // onDeshabilitar={(id) => { ... }}
-                // onGestionar={(id) => { ... }}
+                onCambiarEstado={handleCambiarEstado}
+            />
+            <ConfirmModal
+                open={modalOpen}
+                titulo={modalTitulo}
+                mensaje={modalMensaje}
+                onConfirm={handleConfirmar}
+                onCancel={() => { setModalOpen(false); setAccionPendiente(null); }}
+                loading={loadingAccion}
             />
         </div>
     );
