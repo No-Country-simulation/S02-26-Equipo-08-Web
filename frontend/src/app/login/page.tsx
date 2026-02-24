@@ -117,7 +117,11 @@ export default function LoginPymePage() {
                 <label className="text-sm font-medium text-gray-700">
                   Contraseña
                 </label>
+                
               </div>
+
+
+
               <div className="relative group">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-400 transition-colors" size={17} />
                 <input 
@@ -157,6 +161,14 @@ export default function LoginPymePage() {
           </form>
 
           <div className="space-y-2 text-center">
+            <p className="text-gray-400" style={{ fontSize: "0.82rem" }}>
+               <Link 
+                href="/identity/account/forgot-password" 
+                className="text-xs text-blue-500 hover:text-blue-600 font-medium transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
             <p className="text-gray-400" style={{ fontSize: "0.82rem" }}>
               ¿Sos cuidador?{' '}
               <Link href="/registro/cuidador" className="text-blue-500 hover:text-blue-600 font-medium transition-colors">

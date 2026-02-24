@@ -3,6 +3,8 @@ require('dotenv').config();
 const prisma = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { enviarMailRecuperacion } = require('../utils/mailer');
+const { registrarLog } = require('../utils/auditoria');
 
 const login = async (req, res) => {
   const { email, password } = req.body;
@@ -121,6 +123,102 @@ const login = async (req, res) => {
   }
 };
 
+const solicitarRecuperacion = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // 1. Verificar si el usuario existe
+    const user = await prisma.usuario.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Por seguridad, a veces es mejor decir que "si el correo existe, se enviará", 
+      // pero para desarrollo usaremos este mensaje claro:
+      return res.status(404).json({ message: "No existe un usuario con ese correo electrónico." });
+    }
+
+    // 2. Generar un token temporal para la recuperación (vence en 1 hora)
+    const resetToken = jwt.sign(
+      { id: user.id, email: user.email, action: 'password_reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // 3. Obtener el nombre para el saludo del correo
+    const persona = await prisma.persona.findUnique({
+      where: { id_usuario: user.id },
+    });
+    const nombreUsuario = persona ? persona.nombre : "Usuario";
+
+    // 4. ENVIAR EL CORREO usando tu mailer.js
+    console.log(`Intentando enviar correo a: ${email}`);
+    await enviarMailRecuperacion(email, nombreUsuario, resetToken);
+
+    // 5. Registro opcional en auditoría
+    try {
+      await prisma.log_auditoria.create({
+        data: {
+          id_usuario: user.id,
+          accion: 'SOLICITUD_RECUPERACION_PASS',
+          tabla_afectada: 'usuario',
+          ip_direccion: req.headers['x-forwarded-for'] || req.socket.remoteAddress || "127.0.0.1"
+        }
+      });
+    } catch (e) { console.error("Error auditoría:", e); }
+
+    return res.status(200).json({ 
+      message: "Se ha enviado un enlace de recuperación a tu correo electrónico." 
+    });
+
+  } catch (error) {
+    console.error("Error en solicitarRecuperacion:", error);
+    return res.status(500).json({ message: "Error al procesar la solicitud de recuperación." });
+  }
+};
+
+const restablecerPassword = async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    // 1. Verificar el token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 2. Encriptar nueva clave
+    const salt = await bcrypt.genSalt(10);
+    const password_hash = await bcrypt.hash(password, salt);
+
+    // 3. Actualizar contraseña
+    await prisma.usuario.update({
+      where: { id: decoded.id },
+      data: { password_hash: password_hash }
+    });
+
+    // ==========================================
+    // 4. REGISTRO DE AUDITORÍA (Usando tu función)
+    // ==========================================
+    await registrarLog({
+        tx: prisma, // O null si tu función registrarLog no requiere obligatoriamente una transacción
+        id_usuario: decoded.id,
+        accion: 'RESET_PASSWORD_SUCCESS',
+        tabla: 'usuario',
+        detalles: { 
+            mensaje: "El usuario restableció su contraseña exitosamente vía token."
+        },
+        req: req
+    });
+    // ==========================================
+
+    return res.status(200).json({ message: "Contraseña actualizada con éxito" });
+
+  } catch (error) {
+    console.error("Error en reset:", error);
+    return res.status(400).json({ message: "El enlace es inválido o ha expirado" });
+  }
+};
+
 module.exports = {
-    login
+    login,
+    solicitarRecuperacion,
+    restablecerPassword
 };

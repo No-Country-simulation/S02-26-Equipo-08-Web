@@ -22,6 +22,15 @@ router.use("/productos", productoRoutes);
 router.use('/usuarios', usuarioRoutes);
 router.use('/familiares', familiarRoutes);
 router.use('/cuidadores', cuidadorRoutes);
+
+// Justo antes de router.use('/login', loginRoutes);
+router.use((req, res, next) => {
+  console.log(`Llegó una petición: ${req.method} ${req.url}`);
+  next();
+});
+
+router.use('/login', loginRoutes);
+
 router.use('/login', loginRoutes);
 router.use('/auditoria', auditoriaRoutes);
 router.use('/registro', registroRoutes);
