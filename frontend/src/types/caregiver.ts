@@ -21,6 +21,7 @@ export interface Caregiver {
   cvu_alias: string | null;
   addressCaregiver: AddressCaregiver;
   documents: Document[];
+  estado: { id: number; descripcion: string };
 }
 
 export interface CaregiversResponse {

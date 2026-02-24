@@ -1,13 +1,21 @@
 "use client";
 import { useState } from "react";
-import { 
-  UserCircle, Phone, MapPin, Wallet, FileCheck, 
-  ChevronDown, ExternalLink, ShieldCheck 
+import {
+  UserCircle, Phone, MapPin, Wallet, FileCheck,
+  ChevronDown, ExternalLink, ShieldCheck
 } from "lucide-react";
 import { Caregiver } from "@/src/types/caregiver";
 
+const ESTADO_BADGE: Record<number, { label: string; className: string }> = {
+  1: { label: 'PENDIENTE',   className: 'bg-amber-100 text-amber-700' },
+  2: { label: 'ACTIVO',      className: 'bg-emerald-100 text-emerald-700' },
+  3: { label: 'RECHAZADO',   className: 'bg-red-100 text-red-700' },
+  4: { label: 'DESACTIVADO', className: 'bg-slate-100 text-slate-500' },
+}
+
 export function CaregiverCard({ caregiver }: { caregiver: Caregiver }) {
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const badge = ESTADO_BADGE[caregiver.estado?.id] ?? { label: 'DESCONOCIDO', className: 'bg-slate-100 text-slate-400' };
 
   const toggle = (section: string) => setOpenSection(openSection === section ? null : section);
 
@@ -20,8 +28,8 @@ export function CaregiverCard({ caregiver }: { caregiver: Caregiver }) {
           <div className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-white shadow-lg">
             <UserCircle size={28} />
           </div>
-          <span className="text-[10px] font-black px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full flex items-center gap-1">
-            <ShieldCheck size={12} /> VERIFICADO
+          <span className={`text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1 ${badge.className}`}>
+            <ShieldCheck size={12} /> {badge.label}
           </span>
         </div>
         <h3 className="text-lg font-black mt-4 text-brand-primary uppercase tracking-tight leading-tight">

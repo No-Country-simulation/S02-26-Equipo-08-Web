@@ -16,164 +16,161 @@ model Producto {
   createdAt   DateTime @default(now())
 }
 
-model asignacion_servico {
-  id               Int             @id @default(autoincrement())
-  cuidador_id      Int
-  paciente_id      Int
-  tarea_id         Int
-  pedido_id        Int
-  asignado_por     Int?
-  fecha_asignacion DateTime?       @db.Timestamp(6)
-  pedido_servicio  pedido_servicio @relation(fields: [pedido_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_asignacion_servico_pedido_servicio1")
-  tarea            tarea           @relation(fields: [tarea_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_asignacion_servico_tarea1")
-  guardia          guardia[]
+// =============================================
+// modelos del dominio
+// =============================================
+
+model usuario_estado {
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
 }
 
-model cuidador {
-  id                 Int             @default(autoincrement())
-  cuidador_id        Int
-  cbu                String?         @db.VarChar(40)
-  cvu                String?         @db.VarChar(40)
-  alias              String?         @db.VarChar(40)
-  con_documentacion  Int             @default(0) @db.SmallInt
-  cuidador_estado_id Int             @default(1)
-  autorizado_por     Int
-  fecha_autorizado   DateTime?       @db.Timestamp(6)
-  fecha_ingreso      DateTime        @db.Date
-  cuidador_estado    cuidador_estado @relation(fields: [cuidador_estado_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cuidador_cuidador_estado1")
-  usuario            usuario         @relation(fields: [cuidador_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cuidador_usuario1")
+model usuario {
+  id                  Int       @id @default(autoincrement())
+  email               String    @unique @db.VarChar(60)
+  password_hash       String?   @db.VarChar(500)
+  id_rol              Int
+  id_usuario_estado   Int       @default(1)
+  fecha_alta          DateTime? @default(now()) @db.Timestamp(6)
+  fecha_ultimo_login  DateTime? @db.Timestamp(6)
+  intentos_login      Int       @default(0)
+  fecha_deshabilitado DateTime? @db.Timestamp(6)
 
-  @@id([id, cuidador_id])
+  @@index([id], map: "idx_usuario_id")
 }
 
-model cuidador_estado {
-  id          Int        @id @default(autoincrement())
-  descripcion String?    @db.VarChar(45)
-  cuidador    cuidador[]
+model persona {
+  id             Int    @id @default(autoincrement())
+  id_usuario     Int    @unique // Agregamos @unique para relación 1 a 1
+  apellido       String @db.VarChar(60)
+  nombre         String @db.VarChar(60)
+  identificacion String @unique @db.VarChar(45)
+  direccion      String @db.VarChar(1000)
+  telefono       String @unique @db.VarChar(200)
+  edad           Int
+
+  @@index([apellido, nombre], map: "idx_apellido_nombre")
+}
+
+model rol {
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
+}
+
+model paciente_estado {
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
+}
+
+model paciente {
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(60)
+  apellido            String    @db.VarChar(60)
+  identificacion      String    @db.VarChar(45)
+  direccion           String?   @db.VarChar(1000)
+  telefono            String?   @db.VarChar(200)
+  edad                Int?
+  diagnostico         String?   @db.VarChar(500)
+  obra_social         String?   @db.VarChar(100)
+  nro_afiliado        String?   @db.VarChar(50)
+  fecha_ingreso       DateTime  @default(now()) @db.Date
+  id_paciente_estado  Int       @default(1)
 }
 
 model familiar {
-  id            Int        @id
-  paciente_id   Int
-  parentesco_id Int
-  parentesco    parentesco @relation(fields: [parentesco_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_familiar_tipo_parentesco1")
+  id            Int @id @default(autoincrement())
+  id_usuario    Int
+  id_paciente   Int
+  id_parentesco Int
+}
+
+model parentesco {
+  id          Int     @id @default(autoincrement())
+  descripcion String? @db.VarChar(50)
+}
+
+model cuidador {
+  id                 Int       @id @default(autoincrement())
+  id_usuario         Int
+  cbu                String?   @db.VarChar(40)
+  cvu                String?   @db.VarChar(40)
+  alias              String?   @db.VarChar(40)
+  con_documentacion  Int       @default(0) @db.SmallInt
+  id_autorizado_por  Int
+  fecha_autorizado   DateTime? @db.Timestamp(6)
+  fecha_ingreso      DateTime  @db.Date
+}
+
+model pedido_servicio {
+  id                         Int       @id @default(autoincrement())
+  id_usuario                 Int
+  id_paciente                Int
+  fecha_del_servicio         DateTime  @db.Timestamp(6)
+  hora_inicio                DateTime  @db.Time(6)
+  cantidad_horas_solicitadas Float
+  id_pedido_estado           Int?
+  fecha_finalizado           DateTime? @db.Date
+  observaciones              String?   @db.VarChar(1000)
+}
+
+model pedido_estado {
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
+}
+
+model asignacion_servico {
+  id               Int       @id @default(autoincrement())
+  id_cuidador      Int
+  id_paciente      Int
+  id_tarea         Int
+  id_pedido        Int
+  id_asignado_por  Int?
+  fecha_asignacion DateTime? @db.Timestamp(6)
+}
+
+model tarea {
+  id          Int     @id @default(autoincrement())
+  descripcion String  @db.VarChar(60)
+  valor_hora  Float
+  moneda      String? @db.VarChar(45)
 }
 
 model guardia {
-  id                 Int                 @id @default(autoincrement())
-  asignacion_id      Int?
-  paciente_id        Int?
-  cuidador_id        Int?
-  pedido_servicio_id Int?
-  fecha_inicio       DateTime            @db.Date
-  fecha_fin          DateTime            @db.Date
-  hora_inicio        DateTime            @db.Time(6)
-  hora_finalizacion  DateTime            @db.Time(6)
-  estado_id          Int?
+  id                 Int      @id @default(autoincrement())
+  id_asignacion      Int?
+  id_paciente        Int?
+  id_cuidador        Int?
+  id_pedido_servicio Int?
+  fecha_inicio       DateTime @db.Date
+  fecha_fin          DateTime @db.Date
+  hora_inicio        DateTime @db.Time(6)
+  hora_finalizacion  DateTime @db.Time(6)
+  id_guardia_estado  Int?
   observaciones      String?
-  asignacion_servico asignacion_servico? @relation(fields: [asignacion_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_guardia_asignacion_servico1")
-  guardia_estado     guardia_estado?     @relation(fields: [estado_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_guardia_guardia_estado1")
-  pagos              pagos[]
 }
 
 model guardia_estado {
-  id          Int       @id @default(autoincrement())
-  descripcion String    @db.VarChar(45)
-  guardia     guardia[]
+  id          Int    @id @default(autoincrement())
+  descripcion String @db.VarChar(45)
+}
+
+model pagos {
+  id               Int       @id @default(autoincrement())
+  id_cuidador      Int
+  id_guardia       Int
+  fecha_pago       DateTime? @db.Timestamp(6)
+  id_pago_autorizo Int?
+  cantidad_horas   DateTime? @db.Time(6)
+  importe_abonado  Float?
 }
 
 model log_auditoria {
   id             Int       @id @default(autoincrement())
   fecha          DateTime? @default(now()) @db.Timestamp(6)
-  usuario_id     Int
+  id_usuario     Int
   accion         String    @db.VarChar(250)
   tabla_afectada String    @db.VarChar(250)
   valor_anterior Json?
   valor_nuevo    Json?
   ip_direccion   String?   @db.VarChar(45)
-  usuario        usuario   @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_auditoria_usuario1")
-}
-
-model pagos {
-  id              Int       @id @default(autoincrement())
-  cuidador_id     Int
-  guardia_id      Int
-  fecha_pago      DateTime? @db.Timestamp(6)
-  pago_autorizo   Int?
-  cantidad_horas  DateTime? @db.Time(6)
-  importe_abonado Float?
-  guardia         guardia   @relation(fields: [guardia_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pagos_guardia2")
-}
-
-model parentesco {
-  id          Int        @id @default(autoincrement())
-  descripcion String?    @db.VarChar(50)
-  familiar    familiar[]
-}
-
-model pedido_estado {
-  id              Int               @id @default(autoincrement())
-  descripcion     String            @db.VarChar(45)
-  pedido_servicio pedido_servicio[]
-}
-
-model pedido_servicio {
-  id                         Int                  @id @default(autoincrement())
-  usuario_id                 Int
-  fecha_del_servicio         DateTime             @db.Timestamp(6)
-  hora_inicio                DateTime             @db.Time(6)
-  cantidad_horas_solicitadas Float
-  estado_pedido_id           Int?
-  fecha_finalizado           DateTime?            @db.Date
-  observaciones              String?              @db.VarChar(1000)
-  asignacion_servico         asignacion_servico[]
-  pedido_estado              pedido_estado?       @relation(fields: [estado_pedido_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pedido_servicio_pedido_estado1")
-  usuario                    usuario              @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pedido_servicio_usuario1")
-}
-
-model persona {
-  id             Int     @id @default(autoincrement())
-  apellido       String  @db.VarChar(60)
-  nombre         String  @db.VarChar(60)
-  identificacion String  @db.VarChar(45)
-  email          String  @unique @db.VarChar(60)
-  direccion      String  @db.VarChar(1000)
-  telefono       String  @db.VarChar(200)
-  edad           Int
-  usuario        usuario @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_persona_usuario1")
-
-  @@index([apellido, nombre], map: "idx_apellido_nombre")
-  @@index([email], map: "idx_email")
-}
-
-model rol {
-  id          Int       @id
-  descripcion String    @db.VarChar(45)
-  usuario     usuario[]
-}
-
-model tarea {
-  id                 Int                  @id @default(autoincrement())
-  descripcion        String               @db.VarChar(60)
-  valor_hora         Float
-  moneda             String?              @db.VarChar(45)
-  asignacion_servico asignacion_servico[]
-}
-
-model usuario {
-  id                  Int               @id
-  rol_id              Int
-  habilitado          Int               @default(1) @db.SmallInt
-  password_hash       String?           @db.VarChar(500)
-  fecha_alta          DateTime?         @default(now()) @db.Timestamp(6)
-  fecha_ultimo_login  DateTime?         @db.Timestamp(6)
-  intentos_login      Int               @default(0)
-  fecha_deshabilitado DateTime?         @db.Timestamp(6)
-  cuidador            cuidador[]
-  log_auditoria       log_auditoria[]
-  pedido_servicio     pedido_servicio[]
-  persona             persona?
-  rol                 rol               @relation(fields: [rol_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
-
-  @@index([id], map: "idx_usuario_id")
 }
