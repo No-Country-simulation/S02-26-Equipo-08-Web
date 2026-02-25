@@ -12,7 +12,7 @@ const auditoriaRoutes = require('./auditoria.routes');
 const registroRoutes = require('./registro.routes');
 const pacienteRoutes = require('./paciente.routes');
 const pedidoServicioRoutes = require('./pedidoServicio.routes');
-
+const dashboardRoutes = require('./dashboard.routes'); 
 const router = Router();
 
 // montamos las rutas de productos bajo /productos
@@ -24,18 +24,19 @@ router.use('/familiares', familiarRoutes);
 router.use('/cuidadores', cuidadorRoutes);
 
 // Justo antes de router.use('/login', loginRoutes);
+/*
 router.use((req, res, next) => {
   console.log(`Llegó una petición: ${req.method} ${req.url}`);
   next();
 });
-
-router.use('/login', loginRoutes);
+*/
 
 router.use('/login', loginRoutes);
 router.use('/auditoria', auditoriaRoutes);
 router.use('/registro', registroRoutes);
 router.use('/pacientes', pacienteRoutes);
 router.use('/pedidoServicio', pedidoServicioRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // para agregar nuevas rutas, segui este patron:
 // const nuevaRuta = require("./nueva.routes");
