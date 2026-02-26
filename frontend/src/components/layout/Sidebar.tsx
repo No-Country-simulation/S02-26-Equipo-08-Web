@@ -16,22 +16,20 @@ import {
 // Importamos tus funciones de auth
 import { getMisDatos, logout } from '@/src/actions/auth';
 
+// Definimos los items con una propiedad 'roles'
+// Rol 1: Admin, Rol 2: Cuidador, Rol 3: Familiar
 const menuItems = [
-  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound },
-  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users },
-  { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, roles: [1, 2, 3] },
+  { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound, roles: [1] },
+  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users, roles: [1] },
+  { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings, roles: [1] },
 ];
-// { name: 'Informes/Horas', href: '/adm', icon: FileText },
-// { name: 'Pagos', href: '#', icon: CreditCard },
 
 export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, toggleSidebar: () => void }) {
   const pathname = usePathname();
-
-  // Estado para almacenar los datos del usuario
   const [user, setUser] = useState<any>(null);
 
-  // Efecto para cargar los datos del token al montar el componente
+  // Carga de datos del usuario
   useEffect(() => {
     const cargarInformacion = async () => {
       try {
@@ -49,6 +47,13 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
   const handleLogoutClick = async () => {
     await logout();
   };
+
+  // --- FILTRADO POR ROL ---
+  // Si el usuario aún no carga, no mostramos nada o solo el Dashboard
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!user) return item.name === 'Dashboard'; // Evita errores antes de cargar el user
+    return item.roles.includes(user.role);
+  });
 
   return (
     <>
@@ -84,9 +89,9 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
             </button>
           </div>
 
-          {/* Navegación */}
+          {/* Navegación Filtrada */}
           <nav className="flex-1 px-4 space-y-2 mt-4">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -108,8 +113,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
 
           {/* Footer Sidebar (User info) */}
           <div className="p-4 border-t border-white/10">
-
-            {/* Sección del Rol del Usuario */}
             {user && (
               <div className="flex items-center gap-3 px-4 py-3 text-slate-400 mb-2">
                 <div className="bg-white/5 p-2 rounded-lg">
