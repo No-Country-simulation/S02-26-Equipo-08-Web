@@ -129,6 +129,18 @@ export default function RegistroCuidadorPage() {
       const result = await registrarCuidadorAction(datosRegistro);
 
       if (result.success) {
+        // Subir documentos seleccionados usando el id del usuario recién creado
+        const idUsuario = result.data?.id;
+        if (idUsuario && Object.keys(archivosSeleccionados).length > 0) {
+          for (const [idTipoStr, archivo] of Object.entries(archivosSeleccionados)) {
+            const formData = new FormData();
+            formData.append("archivo", archivo);
+            formData.append("id_tipo_documento", idTipoStr);
+            formData.append("id_usuario", String(idUsuario));
+            formData.append("subido_por", String(idUsuario));
+            await subirDocumento(formData);
+          }
+        }
         setRegistroExitoso(true);
       } else {
         setServerError(result.message);
