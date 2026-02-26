@@ -19,21 +19,18 @@ import {
   CheckCircle2,
   Heart,
   Check,
-  UserRound,
   FileCheck,
   Upload,
-  FileText,
-  Image,
 } from "lucide-react";
 import { registroFamiliarSchema, type RegistroFamiliarForm } from "@/src/types/registro";
 import { registrarFamiliarAction } from "@/src/actions/registro";
-import { obtenerTiposDocumento, type TipoDocumento } from "@/src/actions/documentos";
+import { obtenerTiposDocumento, subirDocumento, type TipoDocumento } from "@/src/actions/documentos";
 
 const PASOS = [
   { titulo: "Cuenta", descripcion: "Email y contraseña", icon: Mail },
   { titulo: "Datos Personales", descripcion: "Tu información básica", icon: User },
-  { titulo: "Documentación", descripcion: "Opcional — podés subirla después", icon: FileCheck },
   { titulo: "Confirmación", descripcion: "Revisá y confirmá", icon: CheckCircle2 },
+  { titulo: "Documentación", descripcion: "Tus documentos personales", icon: FileCheck },
 ];
 
 export default function RegistroFamiliarPage() {
@@ -68,27 +65,19 @@ export default function RegistroFamiliarPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [tiposDoc, setTiposDoc] = useState<TipoDocumento[]>([]);
-  const [archivosSeleccionados, setArchivosSeleccionados] = useState<Record<number, File>>({});
-  const [docUploadStatus, setDocUploadStatus] = useState<Record<number, "idle" | "uploading" | "success" | "error">>({});
+  const [nuevoUsuarioId, setNuevoUsuarioId] = useState<number | null>(null);
+  const [docsCargados, setDocsCargados] = useState<Record<number, string>>({});
+  const [uploadingDoc, setUploadingDoc] = useState<Record<number, boolean>>({});
 
   const camposPorPaso: (keyof RegistroFamiliarForm)[][] = [
     ["email", "password", "confirmarPassword"],
     ["nombre", "apellido", "identificacion", "telefono", "direccion", "edad"],
-    [], // documentacion, no valida campos
     [], // confirmacion, no valida campos nuevos
+    [], // documentacion, no valida campos nuevos
   ];
 
   const avanzar = async () => {
     const campos = camposPorPaso[paso];
-    // paso de documentación (2) es opcional
-    if (paso === 2) {
-      setPaso(paso + 1);
-      return;
-    }
-    // al salir del paso 1, cargar tipos de doc para el siguiente paso
-    if (paso === 1) {
-      obtenerTiposDocumento("familiar").then(setTiposDoc);
-    }
     const valido = await trigger(campos);
     if (valido) {
       setServerError(null);
@@ -122,7 +111,11 @@ export default function RegistroFamiliarPage() {
       const result = await registrarFamiliarAction(datosRegistro);
 
       if (result.success) {
-        setRegistroExitoso(true);
+        const userId = result.data?.id ?? null;
+        setNuevoUsuarioId(userId);
+        // cargar tipos de documento del familiar y avanzar al paso de documentación
+        obtenerTiposDocumento("familiar").then(setTiposDoc);
+        setPaso(3);
       } else {
         setServerError(result.message);
       }
@@ -131,6 +124,21 @@ export default function RegistroFamiliarPage() {
     } finally {
       setEnviando(false);
     }
+  };
+
+  const handleUploadDoc = async (tipoId: number, file: File) => {
+    if (!nuevoUsuarioId) return;
+    setUploadingDoc((prev) => ({ ...prev, [tipoId]: true }));
+    const formData = new FormData();
+    formData.append("archivo", file);
+    formData.append("id_tipo_documento", tipoId.toString());
+    formData.append("id_usuario", nuevoUsuarioId.toString());
+    formData.append("subido_por", nuevoUsuarioId.toString());
+    const result = await subirDocumento(formData);
+    if (result.success) {
+      setDocsCargados((prev) => ({ ...prev, [tipoId]: file.name }));
+    }
+    setUploadingDoc((prev) => ({ ...prev, [tipoId]: false }));
   };
 
   // pantalla de exito
@@ -488,88 +496,8 @@ export default function RegistroFamiliarPage() {
                     </div>
                   )}
 
-                  {/* PASO 2: Documentación (opcional) */}
+                  {/* PASO 2: Confirmación */}
                   {paso === 2 && (
-                    <div className="space-y-4">
-                      <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4 text-blue-700" style={{ fontSize: "0.82rem", lineHeight: 1.6 }}>
-                        Seleccioná los archivos que quieras subir ahora. Si preferís, podés hacerlo después desde <span className="font-semibold">&quot;Mi Documentación&quot;</span> en tu panel.
-                      </div>
-
-                      {tiposDoc.map((tipo) => {
-                        const archivo = archivosSeleccionados[tipo.id];
-                        const uploadStatus = docUploadStatus[tipo.id] || "idle";
-                        return (
-                          <div key={tipo.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
-                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
-                              <span className="font-medium text-sm text-gray-800 truncate">{tipo.descripcion}</span>
-                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                tipo.obligatorio ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
-                              }`}>
-                                {tipo.obligatorio ? "Obligatorio" : "Opcional"}
-                              </span>
-                            </div>
-                            <div className="p-4">
-                              {archivo ? (
-                                <div className={`flex items-center gap-3 p-3 rounded-lg border ${
-                                  uploadStatus === "success" ? "bg-green-50 border-green-100" : "bg-blue-50 border-blue-100"
-                                }`}>
-                                  {uploadStatus === "success" ? (
-                                    <CheckCircle2 size={18} className="text-green-600 shrink-0" />
-                                  ) : archivo.name.endsWith(".pdf") ? (
-                                    <FileText size={18} className="text-red-500 shrink-0" />
-                                  ) : (
-                                    <Image size={18} className="text-blue-500 shrink-0" />
-                                  )}
-                                  <span className="text-sm text-gray-700 truncate flex-1">{archivo.name}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const nuevos = { ...archivosSeleccionados };
-                                      delete nuevos[tipo.id];
-                                      setArchivosSeleccionados(nuevos);
-                                      const nuevoStatus = { ...docUploadStatus };
-                                      delete nuevoStatus[tipo.id];
-                                      setDocUploadStatus(nuevoStatus);
-                                    }}
-                                    className="text-xs text-red-500 hover:text-red-700 font-medium"
-                                  >
-                                    Quitar
-                                  </button>
-                                </div>
-                              ) : (
-                                <label className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-all">
-                                  <Upload size={20} className="text-gray-400" />
-                                  <span className="text-sm text-gray-500">
-                                    <span className="text-blue-600 font-medium">Seleccioná</span> un archivo
-                                  </span>
-                                  <span className="text-[11px] text-gray-400">PDF, JPG, PNG o WebP · Máx 5MB</span>
-                                  <input
-                                    type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        if (file.size > 5 * 1024 * 1024) {
-                                          alert("El archivo supera los 5MB.");
-                                          return;
-                                        }
-                                        setArchivosSeleccionados({ ...archivosSeleccionados, [tipo.id]: file });
-                                      }
-                                      e.target.value = "";
-                                    }}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* PASO 3: Confirmación */}
-                  {paso === 3 && (
                     <div className="space-y-5">
                       <div className="bg-gray-50 rounded-xl p-5 space-y-3" style={{ fontSize: "0.85rem" }}>
                         <h3 className="font-semibold text-gray-900 text-sm">Resumen de tu registro</h3>
@@ -586,20 +514,81 @@ export default function RegistroFamiliarPage() {
                           <span className="font-medium text-gray-700">{valores.direccion}</span>
                           <span className="text-gray-400">Edad</span>
                           <span className="font-medium text-gray-700">{valores.edad} años</span>
-                          {Object.keys(archivosSeleccionados).length > 0 && (
-                            <>
-                              <span className="text-gray-400">Documentos</span>
-                              <span className="font-medium text-gray-700">
-                                {Object.keys(archivosSeleccionados).length} archivo(s) seleccionado(s)
-                              </span>
-                            </>
-                          )}
                         </div>
                       </div>
 
                       <div className="bg-emerald-50/80 border border-emerald-100 rounded-xl p-4 text-emerald-700" style={{ fontSize: "0.82rem", lineHeight: 1.6 }}>
-                        Una vez registrado, ya podés iniciar sesión con tu email y contraseña.
+                        Una vez registrado, podrás subir tu documentación para agilizar la validación de tu cuenta.
                       </div>
+                    </div>
+                  )}
+
+                  {/* PASO 3: Documentación */}
+                  {paso === 3 && (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4 text-blue-700" style={{ fontSize: "0.82rem", lineHeight: 1.6 }}>
+                        ¡Cuenta creada! Subí tu documentación para que podamos validar tu cuenta más rápido. Podés hacerlo ahora o más tarde desde <span className="font-semibold">Mi Documentación</span>.
+                      </div>
+
+                      {tiposDoc.length === 0 && (
+                        <div className="flex items-center justify-center py-6">
+                          <Loader2 size={20} className="animate-spin text-blue-400" />
+                        </div>
+                      )}
+
+                      {tiposDoc.map((tipo) => {
+                        const nombreArchivo = docsCargados[tipo.id];
+                        const isUploading = uploadingDoc[tipo.id];
+                        return (
+                          <div key={tipo.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
+                              <span className="font-medium text-sm text-gray-800 truncate">{tipo.descripcion}</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                tipo.obligatorio ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                              }`}>
+                                {tipo.obligatorio ? "Obligatorio" : "Opcional"}
+                              </span>
+                            </div>
+                            <div className="p-4">
+                              {nombreArchivo ? (
+                                <div className="flex items-center gap-3 p-3 rounded-lg border bg-green-50 border-green-100">
+                                  <CheckCircle2 size={18} className="text-green-600 shrink-0" />
+                                  <span className="text-sm text-gray-700 truncate flex-1">{nombreArchivo}</span>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-all">
+                                  {isUploading ? (
+                                    <Loader2 size={20} className="animate-spin text-blue-400" />
+                                  ) : (
+                                    <Upload size={20} className="text-gray-400" />
+                                  )}
+                                  <span className="text-sm text-gray-500">
+                                    {isUploading ? "Subiendo..." : <><span className="text-blue-600 font-medium">Seleccioná</span> un archivo</>}
+                                  </span>
+                                  <span className="text-[11px] text-gray-400">PDF, JPG, PNG o WebP · Máx 5MB</span>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    className="hidden"
+                                    disabled={isUploading}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        if (file.size > 5 * 1024 * 1024) {
+                                          alert("El archivo supera los 5MB.");
+                                          return;
+                                        }
+                                        handleUploadDoc(tipo.id, file);
+                                      }
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </motion.div>
@@ -614,7 +603,10 @@ export default function RegistroFamiliarPage() {
 
               {/* Botones de navegacion */}
               <div className="flex justify-between gap-4 pt-6 mt-2 border-t border-gray-50">
-                {paso > 0 ? (
+                {/* Botón izquierdo: Volver/Anterior (oculto en paso 3) */}
+                {paso === 3 ? (
+                  <div />
+                ) : paso > 0 ? (
                   <button
                     type="button"
                     onClick={retroceder}
@@ -635,7 +627,8 @@ export default function RegistroFamiliarPage() {
                   </Link>
                 )}
 
-                {paso < PASOS.length - 1 ? (
+                {/* Botón derecho: Siguiente / Confirmar Registro / Finalizar */}
+                {paso < 2 ? (
                   <button
                     type="button"
                     onClick={avanzar}
@@ -645,7 +638,7 @@ export default function RegistroFamiliarPage() {
                     Siguiente
                     <ArrowRight size={15} />
                   </button>
-                ) : (
+                ) : paso === 2 ? (
                   <button
                     type="button"
                     disabled={enviando}
@@ -664,6 +657,16 @@ export default function RegistroFamiliarPage() {
                         <CheckCircle2 size={15} />
                       </>
                     )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setRegistroExitoso(true)}
+                    className="flex items-center gap-2 px-7 py-2.5 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-all shadow-lg shadow-gray-900/10 cursor-pointer"
+                    style={{ fontSize: "0.85rem", fontWeight: 500 }}
+                  >
+                    Finalizar
+                    <Check size={15} />
                   </button>
                 )}
               </div>

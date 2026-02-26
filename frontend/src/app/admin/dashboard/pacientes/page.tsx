@@ -47,6 +47,7 @@ export default function PacientesPage() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [mensaje, setMensaje] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
+  const [modoDocCreacion, setModoDocCreacion] = useState(false);
   // documentacion
   const [expandedDoc, setExpandedDoc] = useState<number | null>(null);
   const [docsMap, setDocsMap] = useState<Record<number, Documento[]>>({});
@@ -94,6 +95,7 @@ export default function PacientesPage() {
     });
     setEditandoId(null);
     setShowForm(false);
+    setModoDocCreacion(false);
   };
 
   const iniciarEdicion = (p: Paciente) => {
@@ -141,19 +143,35 @@ export default function PacientesPage() {
       id_parentesco: form.id_parentesco,
     };
 
-    let result;
     if (editandoId) {
-      result = await actualizarPaciente(editandoId, datos);
+      const result = await actualizarPaciente(editandoId, datos);
+      if (result.success) {
+        setMensaje({ tipo: "ok", texto: result.message });
+        resetForm();
+        cargarPacientes();
+      } else {
+        setMensaje({ tipo: "error", texto: result.message });
+      }
     } else {
-      result = await crearPaciente(datos);
-    }
-
-    if (result.success) {
-      setMensaje({ tipo: "ok", texto: result.message });
-      resetForm();
-      cargarPacientes();
-    } else {
-      setMensaje({ tipo: "error", texto: result.message });
+      const result = await crearPaciente(datos);
+      if (result.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const nuevoPacienteId = (result.data as any)?.paciente?.id as number | undefined;
+        cargarPacientes();
+        if (nuevoPacienteId) {
+          setEditandoId(nuevoPacienteId);
+          setModoDocCreacion(true);
+          listarDocumentosPaciente(nuevoPacienteId).then((docs) => {
+            setDocsMap((prev) => ({ ...prev, [nuevoPacienteId]: docs }));
+          });
+          setMensaje({ tipo: "ok", texto: "Paciente creado. Podés subir la documentación ahora o más tarde." });
+        } else {
+          resetForm();
+          setMensaje({ tipo: "ok", texto: result.message });
+        }
+      } else {
+        setMensaje({ tipo: "error", texto: result.message });
+      }
     }
     setEnviando(false);
   };
@@ -257,14 +275,104 @@ export default function PacientesPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
-              {editandoId ? "Editar paciente" : "Nuevo paciente"}
+              {modoDocCreacion ? "Documentación del paciente" : editandoId ? "Editar paciente" : "Nuevo paciente"}
             </h2>
             <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 cursor-pointer">
               <X size={20} />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Modo documentación post-creación */}
+          {modoDocCreacion && editandoId && (
+            <>
+              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-emerald-700 text-sm">
+                ✓ Paciente creado correctamente. Subí la documentación ahora o hacelo más tarde desde la tarjeta del paciente.
+              </div>
+              <div className="space-y-3">
+                {tiposDocPaciente.map((tipo) => {
+                  const docExistente = docsMap[editandoId]?.find((d) => d.id_tipo_documento === tipo.id);
+                  const key = `${editandoId}-${tipo.id}`;
+                  const isUploading = uploadingDoc[key];
+                  return (
+                    <div
+                      key={tipo.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {docExistente ? (
+                          <CheckCircle2 size={16} className="text-green-500 shrink-0" />
+                        ) : (
+                          <AlertCircle size={16} className="text-gray-300 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">
+                            {tipo.descripcion}
+                            {tipo.obligatorio && <span className="text-red-400 ml-1">*</span>}
+                          </p>
+                          {docExistente && (
+                            <p className="text-xs text-gray-400 truncate">{docExistente.nombre_archivo}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {docExistente ? (
+                          <>
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_API_URL?.replace("/api", "")}/${docExistente.ruta_archivo}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-all"
+                              title="Ver"
+                            >
+                              <Image size={14} />
+                            </a>
+                            <button
+                              onClick={() => handleDeleteDoc(editandoId, docExistente.id)}
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-medium hover:bg-blue-100 cursor-pointer transition-all">
+                            {isUploading ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              <Upload size={12} />
+                            )}
+                            Subir
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept=".pdf,.jpg,.jpeg,.png,.webp"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleUploadDoc(editandoId, tipo.id, file);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={resetForm}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-all cursor-pointer"
+                >
+                  <CheckCircle2 size={14} />
+                  Finalizar
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Campos del formulario (creación / edición normal) */}
+          {!modoDocCreacion && (<><div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelStyle}>Nombre *</label>
               <input
@@ -384,7 +492,7 @@ export default function PacientesPage() {
           </div>
 
           {/* Documentación inline durante edición */}
-          {editandoId && (
+          {editandoId && !modoDocCreacion && (
             <div className="border-t border-gray-100 pt-5 mt-2 space-y-3">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                 <FileText size={14} />
@@ -471,6 +579,7 @@ export default function PacientesPage() {
               })}
             </div>
           )}
+          </>)}
         </div>
       )}
 
