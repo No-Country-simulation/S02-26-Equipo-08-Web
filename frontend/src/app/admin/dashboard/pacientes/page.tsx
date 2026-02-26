@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/src/context/UserContext";
 import {
   listarMisPacientes,
   crearPaciente,
   actualizarPaciente,
+  eliminarPaciente,
   listarParentescos,
   type Paciente,
   type Parentesco,
@@ -35,10 +37,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Image,
+  CalendarClock,
 } from "lucide-react";
 
 export default function PacientesPage() {
   const { user } = useUser();
+  const router = useRouter();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [parentescos, setParentescos] = useState<Parentesco[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,6 +198,17 @@ export default function PacientesPage() {
     await eliminarDocumento(docId);
     const docs = await listarDocumentosPaciente(pacienteId);
     setDocsMap((prev) => ({ ...prev, [pacienteId]: docs }));
+  };
+
+  const handleEliminar = async (pacienteId: number) => {
+    if (!confirm("¿Estás seguro de eliminar este paciente?")) return;
+    const result = await eliminarPaciente(pacienteId);
+    if (result.success) {
+      setMensaje({ tipo: "ok", texto: result.message });
+      cargarPacientes();
+    } else {
+      setMensaje({ tipo: "error", texto: result.message });
+    }
   };
 
   const pacientesFiltrados = pacientes.filter((p) => {
@@ -528,13 +543,30 @@ export default function PacientesPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => iniciarEdicion(p)}
-                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
-                    title="Editar"
-                  >
-                    <Edit3 size={16} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => router.push(`/admin/dashboard/solicitudes?pacienteId=${p.id}`)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-medium hover:bg-emerald-100 transition-all cursor-pointer"
+                      title="Solicitar acompañamiento"
+                    >
+                      <CalendarClock size={14} />
+                      Solicitar acompañamiento
+                    </button>
+                    <button
+                      onClick={() => iniciarEdicion(p)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                      title="Editar"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleEliminar(p.id)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Details grid */}

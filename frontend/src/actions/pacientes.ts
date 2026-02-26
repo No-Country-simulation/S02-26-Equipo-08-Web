@@ -134,3 +134,20 @@ export async function listarParentescos(): Promise<Parentesco[]> {
     return [];
   }
 }
+
+export async function eliminarPaciente(
+  id: number
+): Promise<{ success: boolean; message: string }> {
+  const userId = await getUserIdFromToken();
+  if (!userId) return { success: false, message: "No autenticado." };
+
+  try {
+    const res = await fetch(`${API_URL}/pacientes/${id}/familiar/${userId}`, {
+      method: "DELETE",
+    });
+    return await res.json();
+  } catch (error) {
+    console.error("eliminarPaciente error:", error);
+    return { success: false, message: "Error de conexión." };
+  }
+}
