@@ -61,13 +61,37 @@ export default function SolicitudesPage() {
     cargarDatos();
   }, [cargarDatos]);
 
+  /*
   const calcularHoras = (inicio: string, fin: string): number => {
     if (!inicio || !fin) return 0;
     const [hi, mi] = inicio.split(":").map(Number);
     const [hf, mf] = fin.split(":").map(Number);
     const diff = (hf * 60 + mf - hi * 60 - mi) / 60;
+
+
     return Math.max(0, Math.round(diff * 100) / 100);
   };
+  */
+  
+  const calcularHoras = (inicio: string, fin: string): number => {
+  if (!inicio || !fin) return 0;
+  
+  const [hi, mi] = inicio.split(":").map(Number);
+  const [hf, mf] = fin.split(":").map(Number);
+  
+  // 1. Calculamos la diferencia base en minutos
+  let diffMinutos = (hf * 60 + mf) - (hi * 60 + mi);
+  
+  // 2. Si es negativo, sumamos los minutos de un día completo (24 * 60 = 1440)
+  if (diffMinutos < 0) {
+    diffMinutos += 1440;
+  }
+  
+    // 3. Convertimos a horas y redondeamos
+    const diff = diffMinutos / 60;
+    return Math.round(diff * 100) / 100;
+  };
+  
 
   const hoyISO = new Date().toISOString().split("T")[0];
 
