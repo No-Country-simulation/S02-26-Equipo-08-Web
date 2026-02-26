@@ -4,6 +4,7 @@ const {
     obtenerPaciente,
     crearPaciente,
     actualizarPaciente,
+    eliminarPaciente,
     listarParentescos,
 } = require("../controllers/paciente.controllers");
 
@@ -23,5 +24,8 @@ router.post("/", crearPaciente);
 
 // PUT /api/pacientes/:id — actualizar datos de un paciente
 router.put("/:id", actualizarPaciente);
+
+// DELETE /api/pacientes/:id/familiar/:idUsuario — eliminar paciente
+router.delete("/:id/familiar/:idUsuario", eliminarPaciente);
 
 module.exports = router;

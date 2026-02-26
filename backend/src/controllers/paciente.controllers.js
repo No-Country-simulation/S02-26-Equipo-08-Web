@@ -122,6 +122,19 @@ const crearPaciente = async (req, res, next) => {
             });
         }
 
+        // verificar DNI único para este familiar
+        const dniDuplicado = await prisma.$queryRawUnsafe(`
+            SELECT p.id FROM familiar f
+            JOIN paciente p ON p.id = f.id_paciente
+            WHERE f.id_usuario = $1 AND p.identificacion = $2
+        `, parseInt(id_usuario_familiar), identificacion);
+        if (dniDuplicado && dniDuplicado.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Ya tenés un paciente registrado con ese DNI.",
+            });
+        }
+
         // transaccion: crear paciente + vincular familiar
         const resultado = await prisma.$transaction(async (tx) => {
             const paciente = await tx.paciente.create({
@@ -210,6 +223,49 @@ const actualizarPaciente = async (req, res, next) => {
     }
 };
 
+// eliminar paciente (solo si no tiene solicitudes activas)
+const eliminarPaciente = async (req, res, next) => {
+    try {
+        const id = parseInt(req.params.id);
+        const idUsuario = parseInt(req.params.idUsuario);
+        if (isNaN(id) || isNaN(idUsuario)) {
+            return res.status(400).json({ success: false, message: "IDs inválidos." });
+        }
+
+        // verificar vínculo familiar-paciente
+        const vinculo = await prisma.familiar.findFirst({
+            where: { id_usuario: idUsuario, id_paciente: id },
+        });
+        if (!vinculo) {
+            return res.status(403).json({ success: false, message: "No tenés vínculo con este paciente." });
+        }
+
+        // verificar solicitudes activas (estado != 4 = Cancelado)
+        const solicitudesActivas = await prisma.pedido_servicio.findMany({
+            where: {
+                id_paciente: id,
+                NOT: { id_pedido_estado: 4 },
+            },
+        });
+        if (solicitudesActivas.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No se puede eliminar: el paciente tiene solicitudes activas.",
+            });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.familiar.deleteMany({ where: { id_paciente: id } });
+            await tx.paciente.delete({ where: { id } });
+        });
+
+        return res.status(200).json({ success: true, message: "Paciente eliminado." });
+    } catch (error) {
+        console.error("eliminarPaciente error:", error);
+        next(error);
+    }
+};
+
 // listar parentescos disponibles
 const listarParentescos = async (req, res, next) => {
     try {
@@ -233,5 +289,6 @@ module.exports = {
     obtenerPaciente,
     crearPaciente,
     actualizarPaciente,
+    eliminarPaciente,
     listarParentescos,
 };

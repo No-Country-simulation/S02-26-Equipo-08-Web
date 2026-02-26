@@ -12,7 +12,8 @@ import {
   Activity,
   User,
   FileCheck,
-  Heart
+  Heart,
+  CalendarClock
 } from 'lucide-react';
 
 // Importamos tus funciones de auth
@@ -34,6 +35,7 @@ const menuByRole: Record<number, { name: string; href: string; icon: any }[]> = 
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Mi Documentación', href: '/admin/dashboard/documentacion', icon: FileCheck },
     { name: 'Mis Pacientes', href: '/admin/dashboard/pacientes', icon: Heart },
+    { name: 'Mis Solicitudes', href: '/admin/dashboard/solicitudes', icon: CalendarClock },
   ],
 };
 
