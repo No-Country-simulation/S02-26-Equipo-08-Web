@@ -1,6 +1,6 @@
 import { 
   Plus, Search, MoreVertical, Activity, 
-  User
+  User, ShieldCheck, Stethoscope, Heart
 } from 'lucide-react';
 import { redirect } from "next/navigation";
 import Link from "next/link"; 
@@ -10,7 +10,6 @@ import SearchInput from "../../../components/ui/searchInput";
 
 export const dynamic = 'force-dynamic';
 
-// Definición de Props corregida para Next.js 15
 interface Props {
   searchParams: Promise<{ 
     page?: string; 
@@ -19,18 +18,23 @@ interface Props {
 }
 
 export default async function PatientDashboard({ searchParams }: Props) {
-  // 1. Obtenemos los parámetros de búsqueda y página
   const params = await searchParams;
   const currentPage = Number(params.page) || 1;
   const searchTerm = params.search || "";
 
-  // 2. Validamos la sesión del usuario
+  // 1. Validamos la sesión del usuario primero para tener su rol
   const user = await getMisDatos();
   if (!user) {
     redirect("/login");
   }
 
-  // 3. Obtenemos los datos filtrados (Pasamos página Y término de búsqueda)
+  // 2. Definimos el mapeo de iconos basado en el rol del usuario
+  const icons: Record<number, React.ReactNode> = {
+    1: <ShieldCheck size={40} className="text-brand-accent" />, // Admin
+    2: <Stethoscope size={40} className="text-brand-accent" />, // Cuidador
+    3: <Heart size={40} className="text-brand-accent" />         // Familiar
+  };
+
   const dashboardData = await getDashboardData(currentPage, searchTerm);
 
   const isAdmin = user.role === 1;
@@ -58,15 +62,22 @@ export default async function PatientDashboard({ searchParams }: Props) {
   return (
     <div className="min-h-screen bg-brand-secondary p-8">
       
-      {/* HEADER DINÁMICO */}
+      {/* HEADER DINÁMICO CON ICONO SEGÚN ROL */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-brand-primary">
-            Bienvenido, <span className="text-brand-accent">{user.nameUser}</span> 👋
-          </h1>
-          <p className="text-slate-500 font-medium">
-            Panel de {isAdmin ? 'Administrador' : isCuidador ? 'Cuidador' : 'Familiar'} | Gestión PYMECare
-          </p>
+        <div className="flex items-center gap-4">
+          {/* Mostramos el icono según el rol */}
+          <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center">
+            {icons[user.role as keyof typeof icons] || <User size={40} className="text-brand-accent" />}
+          </div>
+          
+          <div>
+            <h1 className="text-3xl font-bold text-brand-primary">
+              Bienvenido, <span className="text-brand-accent">{user.nameUser}</span> 
+            </h1>
+            <p className="text-slate-500 font-medium">
+              Panel de {isAdmin ? 'Administrador' : isCuidador ? 'Cuidador' : 'Familiar'} | Gestión PYMECare
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-3">
@@ -102,7 +113,6 @@ export default async function PatientDashboard({ searchParams }: Props) {
 
       {/* SECCIÓN DE TABLA */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between bg-slate-50/50">
             <SearchInput /> 
         </div>
