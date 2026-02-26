@@ -13,7 +13,7 @@ const prisma = require("../config/database");
 const bcrypt = require("bcrypt");
 
 // POST /api/registro/cuidador
-// crea usuario (rol 2, estado PA, activo 0) + persona + cuidador en una transaccion
+// crea usuario (rol 2, estado PA, activo 0) + persona + cuidador + disponibilidades en una transaccion
 const registrarCuidador = async (req, res, next) => {
   try {
     const {
@@ -28,6 +28,7 @@ const registrarCuidador = async (req, res, next) => {
       cbu,
       cvu,
       alias,
+      disponibilidades, // array opcional: [{ dia_semana: 1, hora_inicio: "08:00", hora_fin: "18:00" }]
     } = req.body;
 
     // validacion de campos obligatorios
@@ -110,9 +111,10 @@ const registrarCuidador = async (req, res, next) => {
       );
 
       // 3. crear cuidador
-      await tx.$queryRawUnsafe(
+      const [cuidador] = await tx.$queryRawUnsafe(
         `INSERT INTO cuidador (id_usuario, cbu, cvu, alias, con_documentacion, id_autorizado_por, fecha_ingreso)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id`,
         usuario.id,
         cbu || null,
         cvu || null,
@@ -121,6 +123,23 @@ const registrarCuidador = async (req, res, next) => {
         0,
         new Date()
       );
+
+      // 4. guardar disponibilidades si se enviaron
+      if (Array.isArray(disponibilidades) && disponibilidades.length > 0) {
+        for (const disp of disponibilidades) {
+          const { dia_semana, hora_inicio, hora_fin } = disp;
+          if (!dia_semana || !hora_inicio || !hora_fin) continue;
+          await tx.$queryRawUnsafe(
+            `INSERT INTO disponibilidad_cuidador (id_cuidador, dia_semana, hora_inicio, hora_fin)
+             VALUES ($1, $2, $3::time, $4::time)
+             ON CONFLICT (id_cuidador, dia_semana) DO UPDATE SET hora_inicio = EXCLUDED.hora_inicio, hora_fin = EXCLUDED.hora_fin`,
+            cuidador.id,
+            parseInt(dia_semana),
+            hora_inicio,
+            hora_fin
+          );
+        }
+      }
 
       return usuario;
     });
