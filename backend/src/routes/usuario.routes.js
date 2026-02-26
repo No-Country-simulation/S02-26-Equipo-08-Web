@@ -5,7 +5,8 @@ const {
     desbloquearUsuario,
     listarUsuarios,
     obtenerUsuarioPorId,
-    cambiarEstadoUsuario
+    cambiarEstadoUsuario,
+    registrarUsuario
 } = require('../controllers/usuario.controllers')
 
 const router = Router();
@@ -19,5 +20,6 @@ router.get('/listar', listarUsuarios)
 router.patch('/desbloquear/:id', desbloquearUsuario);
 router.patch('/cambiarEstado/:id', cambiarEstadoUsuario);
 router.get('/:id', obtenerUsuarioPorId)   // siempre al final (catch-all por el :id)
+router.post('/registrarUsuario', registrarUsuario);
 
 module.exports = router

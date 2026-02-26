@@ -1,58 +1,111 @@
-import { Plus, Search, MoreVertical, UserCircle2, Activity, LogOut } from 'lucide-react';
-import { getMisDatos, logout } from "../../../actions/auth";
+import { 
+  Plus, Search, MoreVertical, Activity, 
+  User, ShieldCheck, Stethoscope, Heart
+} from 'lucide-react';
 import { redirect } from "next/navigation";
+import Link from "next/link"; 
+import { getMisDatos } from "../../../actions/auth";
+import { getDashboardData } from "../../../actions/dashboard";
+import SearchInput from "../../../components/ui/searchInput";
 
-// Obliga a Next.js a ejecutar la lógica del servidor en cada visita (evita el caché)
 export const dynamic = 'force-dynamic';
 
-export default async function PatientDashboard() {
-  // 1. Validamos la sesión recuperando los datos del token
-  const user = await getMisDatos();
+interface Props {
+  searchParams: Promise<{ 
+    page?: string; 
+    search?: string; 
+  }>;
+}
 
-  // 2. Si no hay usuario (token expirado o inexistente), redirigimos al login
+export default async function PatientDashboard({ searchParams }: Props) {
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
+  const searchTerm = params.search || "";
+
+  // 1. Validamos la sesión del usuario primero para tener su rol
+  const user = await getMisDatos();
   if (!user) {
     redirect("/login");
+  }
+
+  // 2. Definimos el mapeo de iconos basado en el rol del usuario
+  const icons: Record<number, React.ReactNode> = {
+    1: <ShieldCheck size={40} className="text-brand-accent" />, // Admin
+    2: <Stethoscope size={40} className="text-brand-accent" />, // Cuidador
+    3: <Heart size={40} className="text-brand-accent" />         // Familiar
+  };
+
+  const dashboardData = await getDashboardData(currentPage, searchTerm);
+
+  const isAdmin = user.role === 1;
+  const isCuidador = user.role === 2;
+  const isFamiliar = user.role === 3;
+
+  const ESTADOS: Record<string, { label: string; color: string }> = {
+    "Activo": { label: "Activo", color: "bg-emerald-100 text-emerald-700" },
+    "Pendiente de Aceptar": { label: "Pendiente", color: "bg-amber-100 text-amber-700" },
+    "Rechazado": { label: "Rechazado", color: "bg-red-100 text-red-700" },
+    "Desactivado": { label: "Desactivado", color: "bg-slate-100 text-slate-600" },
+  };
+
+  if (!dashboardData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-secondary">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-sm border border-slate-200">
+          <p className="text-red-500 font-bold text-lg">Error de conexión</p>
+          <p className="text-slate-500">No se pudo obtener la información del servidor.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-brand-secondary p-8">
       
-      {/* HEADER DINÁMICO */}
+      {/* HEADER DINÁMICO CON ICONO SEGÚN ROL */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-brand-primary">
-            Bienvenido, <span className="text-brand-accent">{user.nameUser}</span> 👋
-          </h1>
+        <div className="flex items-center gap-4">
+          {/* Mostramos el icono según el rol */}
+          <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center">
+            {icons[user.role as keyof typeof icons] || <User size={40} className="text-brand-accent" />}
+          </div>
           
-          <p className="text-slate-500 font-medium">
-            Panel de {user.role === 1 ? 'Administrador' : 'Cuidador'} | Gestión de Pacientes
-          </p>
+          <div>
+            <h1 className="text-3xl font-bold text-brand-primary">
+              Bienvenido, <span className="text-brand-accent">{user.nameUser}</span> 
+            </h1>
+            <p className="text-slate-500 font-medium">
+              Panel de {isAdmin ? 'Administrador' : isCuidador ? 'Cuidador' : 'Familiar'} | Gestión PYMECare
+            </p>
+          </div>
         </div>
 
-        
         <div className="flex gap-3">
-          
-          <button className="flex items-center gap-2 bg-brand-primary hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg cursor-pointer">
-            <Plus size={20} className="text-brand-accent" />
-            Nuevo Paciente
-          </button>
+          {isAdmin && (
+            <button className="flex items-center gap-2 bg-brand-primary hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg cursor-pointer">
+              <Plus size={20} className="text-brand-accent" />
+              Nuevo Usuario
+            </button>
+          )}
+          {isFamiliar && (
+            <button className="flex items-center gap-2 bg-brand-accent text-brand-primary hover:opacity-90 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg cursor-pointer">
+              <Plus size={20} />
+              Solicitar Servicio
+            </button>
+          )}
         </div>
       </header>
 
       {/* MÉTRICAS (KPIs) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {[
-          { label: 'Pacientes Activos', value: '124', icon: <UserCircle2 className="text-brand-accent" /> },
-          { label: 'Guardias Hoy', value: '42', icon: <Activity className="text-brand-accent" /> },
-          { label: 'Pendientes de Pago', value: '$450k', icon: <div className="w-2 h-2 rounded-full bg-amber-500" /> }
-        ].map((kpi, i) => (
+        {dashboardData.kpis?.map((kpi: any, i: number) => (
           <div key={i} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500 font-bold uppercase tracking-wider">{kpi.label}</p>
               <p className="text-3xl font-bold mt-1 text-brand-primary">{kpi.value}</p>
             </div>
-            <div className="bg-brand-secondary p-3 rounded-lg">
-              {kpi.icon}
+            <div className="bg-brand-secondary p-3 rounded-lg text-brand-accent">
+              <Activity size={24} />
             </div>
           </div>
         ))}
@@ -60,71 +113,89 @@ export default async function PatientDashboard() {
 
       {/* SECCIÓN DE TABLA */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        
-        {/* BARRA DE FILTROS */}
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4 justify-between bg-slate-50/50">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Buscar paciente por nombre o ID..." 
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-accent/20 transition-all"
-            />
-          </div>
-          <select className="px-4 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none text-brand-primary font-medium">
-            <option>Todos los estados</option>
-            <option>Activos</option>
-            <option>Inactivos</option>
-          </select>
+            <SearchInput /> 
         </div>
 
-        {/* TABLA DE DATOS */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-sm uppercase">
-                <th className="px-6 py-4 font-semibold">Paciente</th>
-                <th className="px-6 py-4 font-semibold">Cuidador Asignado</th>
-                <th className="px-6 py-4 font-semibold">Última Guardia</th>
+                <th className="px-6 py-4 font-semibold">{isAdmin ? 'Usuario' : 'Detalle del Servicio / Paciente'}</th>
+                <th className="px-6 py-4 font-semibold">{isAdmin ? 'Rol' : 'Información Adicional'}</th>
+                <th className="px-6 py-4 font-semibold">{isAdmin ? 'Fecha alta' : 'Fecha'}</th>
                 <th className="px-6 py-4 font-semibold">Estado</th>
-                <th className="px-6 py-4 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {/* Mapeo de ejemplo (esto luego vendrá de tu fetch al puerto 8001) */}
-              {[1, 2, 3, 4, 5].map((_, i) => (
-                <tr key={i} className="hover:bg-slate-50/80 transition-colors group">
-                  <td className="px-6 py-4 font-medium text-brand-primary">Juan Pérez {i + 1}</td>
-                  <td className="px-6 py-4 text-slate-600">Marta Gómez</td>
-                  <td className="px-6 py-4 text-slate-500 text-sm">12 Oct, 2023</td>
-                  <td className="px-6 py-4">
-                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                      Activo
-                    </span>
+              {dashboardData.listado?.map((item: any) => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                  <td className="px-6 py-4 font-medium text-brand-primary">
+                    {isAdmin 
+                      ? (`${item.apellido} ${item.nombre || ''}`) 
+                      : (item.paciente 
+                          ? `${item.paciente.nombre} ${item.paciente.apellido || ''}` 
+                          : (item.nombre ? `${item.nombre} ${item.apellido || ''}` : "Paciente General")
+                        )
+                    }
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-slate-400 hover:text-brand-accent transition-colors p-1 cursor-pointer">
-                      <MoreVertical size={20} />
-                    </button>
+                  <td className="px-6 py-4 text-slate-600">
+                    {isAdmin ? item.rol : (item.informacion_adicional || item.tipo_servicio)}
+                  </td>
+                  <td className="px-6 py-4 text-slate-500 text-sm">
+                    {(item.fecha || item.fecha_del_servicio || item.createdAt) 
+                      ? new Date(item.fecha || item.fecha_del_servicio || item.createdAt).toLocaleDateString() 
+                      : '---'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const estadoInfo = ESTADOS[item.estado] || { 
+                        label: item.estado || "Desconocido", 
+                        color: "bg-slate-100 text-slate-600" 
+                      };
+                      return (
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${estadoInfo.color}`}>
+                          {estadoInfo.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {(!dashboardData.listado || dashboardData.listado.length === 0) && (
+            <div className="p-12 text-center text-slate-400">No se encontraron registros.</div>
+          )}
         </div>
 
         {/* PAGINACIÓN */}
-        <div className="p-4 border-t border-slate-100 flex justify-between items-center text-sm text-slate-500">
-          <span>Mostrando 5 de 124 pacientes</span>
-          <div className="flex gap-2">
-            <button className="px-4 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all cursor-pointer">
-              Anterior
-            </button>
-            <button className="px-4 py-2 bg-brand-primary text-white rounded-lg transition-all hover:opacity-90 cursor-pointer">
-              Siguiente
-            </button>
+        {dashboardData.pagination && dashboardData.pagination.totalPages > 1 && (
+          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+              Página <span className="font-bold text-brand-primary">{currentPage}</span> de {dashboardData.pagination.totalPages}
+            </p>
+            <div className="flex gap-2">
+              <Link
+                href={`?page=${currentPage - 1}&search=${searchTerm}`}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  currentPage <= 1 ? 'pointer-events-none opacity-50 bg-slate-100' : 'bg-white hover:bg-slate-50'
+                }`}
+              >
+                Anterior
+              </Link>
+              <Link
+                href={`?page=${currentPage + 1}&search=${searchTerm}`}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                  currentPage >= dashboardData.pagination.totalPages ? 'pointer-events-none opacity-50 bg-slate-100' : 'bg-white hover:bg-slate-50'
+                }`}
+              >
+                Siguiente
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

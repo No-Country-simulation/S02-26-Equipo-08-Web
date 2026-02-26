@@ -3,6 +3,7 @@ const {
     listarPacientesPorFamiliar,
     obtenerPaciente,
     crearPaciente,
+    registrarPaciente,
     actualizarPaciente,
     eliminarPaciente,
     listarParentescos,
@@ -16,8 +17,8 @@ router.get("/parentescos", listarParentescos);
 // GET /api/pacientes/familiar/:idUsuario — pacientes vinculados a un familiar
 router.get("/familiar/:idUsuario", listarPacientesPorFamiliar);
 
-// GET /api/pacientes/:id — detalle de un paciente
-router.get("/:id", obtenerPaciente);
+// POST /api/pacientes/registrar — dar de alta paciente (transaccional con auditoría)
+router.post("/registrar", registrarPaciente);
 
 // POST /api/pacientes — crear paciente y vincular a familiar
 router.post("/", crearPaciente);
@@ -27,5 +28,8 @@ router.put("/:id", actualizarPaciente);
 
 // DELETE /api/pacientes/:id/familiar/:idUsuario — eliminar paciente
 router.delete("/:id/familiar/:idUsuario", eliminarPaciente);
+
+// GET /api/pacientes/:id — detalle de un paciente (siempre al final)
+router.get("/:id", obtenerPaciente);
 
 module.exports = router;

@@ -1,6 +1,7 @@
 const prisma = require("../config/database");
+const { registrarLog } = require('../utils/auditoria');
 
-// crear solicitud de acompañamiento
+// crear solicitud de acompañamiento (versión simple)
 const solicitarServicio = async (req, res, next) => {
     try {
         const {
@@ -19,7 +20,6 @@ const solicitarServicio = async (req, res, next) => {
             });
         }
 
-        // verificar usuario activo con rol familiar
         const usuario = await prisma.usuario.findUnique({ where: { id: parseInt(id_usuario) } });
         if (!usuario || usuario.id_rol !== 3 || usuario.id_usuario_estado !== 2) {
             return res.status(403).json({
@@ -29,7 +29,6 @@ const solicitarServicio = async (req, res, next) => {
             });
         }
 
-        // verificar paciente existente y activo
         const paciente = await prisma.paciente.findUnique({ where: { id: parseInt(id_paciente) } });
         if (!paciente || paciente.id_paciente_estado !== 1) {
             return res.status(404).json({
@@ -39,7 +38,6 @@ const solicitarServicio = async (req, res, next) => {
             });
         }
 
-        // verificar vínculo familiar-paciente
         const vinculo = await prisma.familiar.findFirst({
             where: { id_usuario: parseInt(id_usuario), id_paciente: parseInt(id_paciente) },
         });
@@ -51,7 +49,6 @@ const solicitarServicio = async (req, res, next) => {
             });
         }
 
-        // validar que la fecha no sea pasada
         const fechaServicio = new Date(fecha_del_servicio);
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
@@ -63,7 +60,6 @@ const solicitarServicio = async (req, res, next) => {
             });
         }
 
-        // crear pedido con estado PA (1 = pendiente a asignación)
         const nuevoPedido = await prisma.pedido_servicio.create({
             data: {
                 id_usuario: parseInt(id_usuario),
@@ -86,6 +82,114 @@ const solicitarServicio = async (req, res, next) => {
         next(error);
     }
 };
+
+// crear solicitud de acompañamiento (versión transaccional con auditoría)
+async function solicitarServicioAcompanamiento(req, res, next) {
+    const {
+        id_usuario,
+        id_paciente,
+        fecha_del_servicio,
+        hora_inicio,
+        cantidad_horas_solicitadas,
+        observaciones
+    } = req.body;
+
+    try {
+        const fechaServicio = new Date(fecha_del_servicio);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        if (fechaServicio < hoy) {
+            throw new Error("INVALID_DATE_PAST");
+        }
+
+        const resultado = await prisma.$transaction(async (tx) => {
+            const familiar = await tx.usuario.findFirst({
+                where: {
+                    id: parseInt(id_usuario),
+                    id_rol: 3,
+                    id_usuario_estado: 2
+                }
+            });
+            if (!familiar) throw new Error("USER_NOT_AUTHORIZED_OR_INACTIVE");
+
+            const paciente = await tx.paciente.findFirst({
+                where: {
+                    id: parseInt(id_paciente),
+                    id_paciente_estado: 1
+                }
+            });
+            if (!paciente) throw new Error("PATIENT_NOT_FOUND_OR_INACTIVE");
+
+            const vinculoFamiliar = await tx.familiar.findFirst({
+                where: {
+                    id_usuario: parseInt(id_usuario),
+                    id_paciente: parseInt(id_paciente)
+                }
+            });
+            if (!vinculoFamiliar) throw new Error("NO_RELATIONSHIP_FOUND");
+
+            const pedidoDuplicado = await tx.pedido_servicio.findFirst({
+                where: {
+                    id_paciente: parseInt(id_paciente),
+                    fecha_del_servicio: fechaServicio,
+                    hora_inicio: new Date(`1970-01-01T${hora_inicio}Z`),
+                    id_pedido_estado: { not: 4 }
+                }
+            });
+            if (pedidoDuplicado) {
+                throw new Error("DUPLICATE_ORDER_TIME");
+            }
+
+            const nuevoPedido = await tx.pedido_servicio.create({
+                data: {
+                    id_usuario: parseInt(id_usuario),
+                    id_paciente: parseInt(id_paciente),
+                    fecha_del_servicio: fechaServicio,
+                    hora_inicio: new Date(`1970-01-01T${hora_inicio}Z`),
+                    cantidad_horas_solicitadas: parseFloat(cantidad_horas_solicitadas),
+                    id_pedido_estado: 1,
+                    observaciones: observaciones || ""
+                }
+            });
+
+            await registrarLog({
+                tx,
+                id_usuario: id_usuario,
+                accion: 'SOLICITUD_SERVICIO',
+                tabla: 'pedido_servicio',
+                detalles: {
+                    pedido_id: nuevoPedido.id,
+                    paciente: `${paciente.nombre} ${paciente.apellido}`
+                },
+                req: req
+            });
+
+            return nuevoPedido;
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Solicitud registrada y auditada correctamente.",
+            data: resultado
+        });
+
+    } catch (error) {
+        const errorMap = {
+            "INVALID_DATE_PAST": "La fecha del servicio no puede ser anterior a hoy.",
+            "USER_NOT_AUTHORIZED_OR_INACTIVE": "Usuario no autorizado o inactivo.",
+            "PATIENT_NOT_FOUND_OR_INACTIVE": "El paciente no existe o no está activo.",
+            "NO_RELATIONSHIP_FOUND": "No tiene un vínculo registrado con este paciente.",
+            "DUPLICATE_ORDER_TIME": "Ya existe un pedido para ese paciente en la misma fecha y hora."
+        };
+
+        const mensaje = errorMap[error.message];
+        if (mensaje) return res.status(403).json({ success: false, message: mensaje });
+
+        console.error("Error en el registro de pedido:", error);
+        next(error);
+    }
+}
 
 // listar solicitudes de un usuario
 const listarPedidosPorUsuario = async (req, res, next) => {
@@ -126,5 +230,6 @@ const listarPedidosPorUsuario = async (req, res, next) => {
 
 module.exports = {
     solicitarServicio,
+    solicitarServicioAcompanamiento,
     listarPedidosPorUsuario,
 };
