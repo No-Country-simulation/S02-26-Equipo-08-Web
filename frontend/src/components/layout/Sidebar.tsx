@@ -53,13 +53,20 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
     await logout();
   };
 
-  // --- FILTRADO POR ROL ---
-  // Si el usuario aún no carga, no mostramos nada o solo el Dashboard
+  // --- FILTRADO POR ROL Y ESTADO ---
   const filteredMenuItems = menuItems.filter(item => {
-    if (!user) return item.name === 'Dashboard'; // Evita errores antes de cargar el user
+    // 1. Si los datos aún no cargan, solo mostramos Dashboard por seguridad
+    if (!user) return item.name === 'Dashboard';
+
+    // 2. Validación de Cuidadores NO habilitados (id_rol 2 y estado distinto de 2)
+    if (user.role === 2 && user.id_usuario_estado !== 2) {
+      return item.name === 'Dashboard';
+    }
+
+    // 3. Filtrado normal por rol para usuarios habilitados
     return item.roles.includes(user.role);
   });
-
+  
   return (
     <>
       {/* Overlay para móviles */}

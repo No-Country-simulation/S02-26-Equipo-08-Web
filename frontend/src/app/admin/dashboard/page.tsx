@@ -1,6 +1,6 @@
 import { 
   Plus, Search, MoreVertical, Activity, 
-  User, ShieldCheck, Stethoscope, Heart
+  User, ShieldCheck, Stethoscope, Heart, ShieldAlert
 } from 'lucide-react';
 import { redirect } from "next/navigation";
 import Link from "next/link"; 
@@ -28,6 +28,41 @@ export default async function PatientDashboard({ searchParams }: Props) {
     redirect("/login");
   }
 
+
+// Rol 2 = Cuidador, Estado 2 = Activo. Si es cuidador y NO está activo, bloqueamos.
+  const isCuidador = user.role === 2;
+  const isEnabled = user.estadoUsuario === 2;
+
+  if (isCuidador && !isEnabled) {
+    return (
+      <div className="min-h-screen bg-brand-secondary p-8 flex items-center justify-center">
+        <div className="bg-white p-10 rounded-3xl shadow-xl border border-red-100 text-center max-w-lg animate-in fade-in zoom-in duration-300">
+          <div className="bg-red-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <ShieldAlert size={48} className="text-red-500" />
+          </div>
+          <h2 className="text-3xl font-bold text-brand-primary mb-4">
+            Usuario no habilitado
+          </h2>
+          <p className="text-slate-600 text-lg leading-relaxed mb-6">
+            Lo sentimos, <span className="font-bold text-brand-primary">{user.nameUser}</span>. 
+            Actualmente tu perfil de cuidador no se encuentra activo en el sistema.
+          </p>
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">
+              Acción requerida
+            </p>
+            <p className="text-brand-primary font-bold text-lg">
+              Por favor comuníquese con el administrador para habilitar su usuario.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // --- FIN LÓGICA DE BLOQUEO ---
+
+
+
   // 2. Definimos el mapeo de iconos basado en el rol del usuario
   const icons: Record<number, React.ReactNode> = {
     1: <ShieldCheck size={40} className="text-brand-accent" />, // Admin
@@ -38,7 +73,7 @@ export default async function PatientDashboard({ searchParams }: Props) {
   const dashboardData = await getDashboardData(currentPage, searchTerm);
 
   const isAdmin = user.role === 1;
-  const isCuidador = user.role === 2;
+  //const isCuidador = user.role === 2;
   const isFamiliar = user.role === 3;
 
   const ESTADOS: Record<string, { label: string; color: string }> = {
