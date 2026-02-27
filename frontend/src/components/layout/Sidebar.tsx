@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
     if (!user) return item.name === 'Dashboard';
 
     // 2. Validación de Cuidadores NO habilitados (id_rol 2 y estado distinto de 2)
-    if (user.id_usuario_estado !== 2) {
+    if (user.estadoUsuario !== 2) {
       return item.name === 'Dashboard';
     }
 
