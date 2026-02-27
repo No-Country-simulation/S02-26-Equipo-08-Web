@@ -77,7 +77,7 @@ export default async function PatientDashboard({ searchParams }: Props) {
   const dashboardData = await getDashboardData(currentPage, searchTerm);
 
   const isAdmin = user.role === 1;
-  //const isCuidador = user.role === 2;
+  const isCuidador = user.role === 2;
   const isFamiliar = user.role === 3;
 
   const ESTADOS: Record<string, { label: string; color: string }> = {
