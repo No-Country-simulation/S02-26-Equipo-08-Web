@@ -13,7 +13,8 @@ import {
   User,
   FileCheck,
   Heart,
-  CalendarClock
+  CalendarClock,
+  DollarSign
 } from 'lucide-react';
 
 // Importamos tus funciones de auth
@@ -25,7 +26,9 @@ const menuItems = [
   { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound, roles: [1] },
   { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users, roles: [1] },
   { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings, roles: [1] },
+  { name: 'Honorarios', href: '/admin/dashboard/honorarios', icon: DollarSign, roles: [1] },
   { name: 'Mi Documentación', href: '/admin/dashboard/documentacion', icon: FileCheck, roles: [2, 3] },
+  { name: 'Mis Honorarios', href: '/admin/dashboard/honorarios', icon: DollarSign, roles: [2] },
   { name: 'Mis Pacientes', href: '/admin/dashboard/pacientes', icon: Heart, roles: [3] },
   { name: 'Mis Solicitudes', href: '/admin/dashboard/solicitudes', icon: CalendarClock, roles: [3] },
 ];
