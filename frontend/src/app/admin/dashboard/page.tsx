@@ -28,12 +28,16 @@ export default async function PatientDashboard({ searchParams }: Props) {
     redirect("/login");
   }
 
+  const perfilNombre = 
+     user.role === 1 ? 'administrador' :
+     user.role === 2 ? 'cuidador' :
+     'familiar';
 
 // Rol 2 = Cuidador, Estado 2 = Activo. Si es cuidador y NO está activo, bloqueamos.
-  const isCuidador = user.role === 2;
+  //const isCuidador = user.role === 2;
   const isEnabled = user.estadoUsuario === 2;
 
-  if (isCuidador && !isEnabled) {
+  if (!isEnabled) {
     return (
       <div className="min-h-screen bg-brand-secondary p-8 flex items-center justify-center">
         <div className="bg-white p-10 rounded-3xl shadow-xl border border-red-100 text-center max-w-lg animate-in fade-in zoom-in duration-300">
@@ -45,7 +49,7 @@ export default async function PatientDashboard({ searchParams }: Props) {
           </h2>
           <p className="text-slate-600 text-lg leading-relaxed mb-6">
             Lo sentimos, <span className="font-bold text-brand-primary">{user.nameUser}</span>. 
-            Actualmente tu perfil de cuidador no se encuentra activo en el sistema.
+            Actualmente tu perfil de {perfilNombre} no se encuentra activo en el sistema.
           </p>
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
             <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">
