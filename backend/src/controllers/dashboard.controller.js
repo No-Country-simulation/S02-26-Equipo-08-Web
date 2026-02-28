@@ -103,7 +103,7 @@ const getDashboardSummary = async (req, res) => {
 
     // --- 3. FAMILIAR ---
     } else if (role === 3) {
-      const pedidos = await prisma.$queryRawUnsafe(`
+      const misPedidos = await prisma.$queryRawUnsafe(`
         SELECT ps.id AS numero_servicio, ps.fecha_del_servicio, 
                pac.nombre AS p_nom, pac.apellido AS p_ape,
                pe.descripcion AS pedido_estado_descripcion, ps.observaciones
@@ -114,7 +114,9 @@ const getDashboardSummary = async (req, res) => {
         ORDER BY ps.id DESC LIMIT $2 OFFSET $3
       `, id, limit, offset, searchFilter);
 
-      data.listado = pedidos.map(p => ({
+      data.kpis = [{ label: 'Mis solicitudes', value: misPedidos.length }];
+      
+      data.listado = misPedidos.map(p => ({
         id: p.numero_servicio,
         nombre: p.p_nom,
         apellido: p.p_ape,
@@ -123,8 +125,8 @@ const getDashboardSummary = async (req, res) => {
         informacion_adicional: p.observaciones || ""
       }));
 
-      data.pagination.total = pedidos.length;
-      data.pagination.totalPages = Math.ceil(pedidos.length / limit);
+      data.pagination.total = misPedidos.length;
+      data.pagination.totalPages = Math.ceil(misPedidos.length / limit);
     }
 
     res.json(data);

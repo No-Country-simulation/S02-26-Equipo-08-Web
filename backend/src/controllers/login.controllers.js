@@ -50,7 +50,8 @@ const login = async (req, res) => {
           id: user.id,
           id_rol: user.id_rol,
           nombre_usuario: datos_persona,
-          rol_descripcion: nombreRol
+          rol_descripcion: nombreRol,
+          id_usuario_estado: user.id_usuario_estado
         },
         process.env.JWT_SECRET, 
         { expiresIn: '8h' }

@@ -61,19 +61,43 @@ export default function SolicitudesPage() {
     cargarDatos();
   }, [cargarDatos]);
 
+  /*
   const calcularHoras = (inicio: string, fin: string): number => {
     if (!inicio || !fin) return 0;
     const [hi, mi] = inicio.split(":").map(Number);
     const [hf, mf] = fin.split(":").map(Number);
     const diff = (hf * 60 + mf - hi * 60 - mi) / 60;
+
+
     return Math.max(0, Math.round(diff * 100) / 100);
   };
+  */
+  
+  const calcularHoras = (inicio: string, fin: string): number => {
+  if (!inicio || !fin) return 0;
+  
+  const [hi, mi] = inicio.split(":").map(Number);
+  const [hf, mf] = fin.split(":").map(Number);
+  
+  // 1. Calculamos la diferencia base en minutos
+  let diffMinutos = (hf * 60 + mf) - (hi * 60 + mi);
+  
+  // 2. Si es negativo, sumamos los minutos de un día completo (24 * 60 = 1440)
+  if (diffMinutos < 0) {
+    diffMinutos += 1440;
+  }
+  
+    // 3. Convertimos a horas y redondeamos
+    const diff = diffMinutos / 60;
+    return Math.round(diff * 100) / 100;
+  };
+  
 
   const hoyISO = new Date().toISOString().split("T")[0];
 
   const handleSubmit = async () => {
     if (!form.id_paciente) {
-      setMensaje({ tipo: "error", texto: "Seleccioná un paciente." });
+      setMensaje({ tipo: "error", texto: "Seleccioná un familiar." });
       return;
     }
     if (!form.fecha_del_servicio) {
@@ -168,7 +192,7 @@ export default function SolicitudesPage() {
             Mis Solicitudes
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Solicitá acompañamiento para tus pacientes
+            Solicitá acompañamiento para tus familiares
           </p>
         </div>
         {!showForm && pacientes.length > 0 && (
@@ -186,8 +210,8 @@ export default function SolicitudesPage() {
       {pacientes.length === 0 && (
         <div className="text-center py-12 bg-amber-50 rounded-2xl border border-amber-100">
           <User size={36} className="mx-auto text-amber-400 mb-3" />
-          <p className="text-amber-700 font-medium">Primero necesitás registrar un paciente</p>
-          <p className="text-amber-500 text-sm mt-1">Andá a &quot;Mis Pacientes&quot; para agregar uno.</p>
+          <p className="text-amber-700 font-medium">Primero necesitás registrar un familiar</p>
+          <p className="text-amber-500 text-sm mt-1">Andá a &quot;Mis Familiares&quot; para agregar uno.</p>
         </div>
       )}
 
@@ -221,14 +245,14 @@ export default function SolicitudesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Paciente */}
             <div className="sm:col-span-2">
-              <label className={labelStyle}>Paciente *</label>
+              <label className={labelStyle}>Familiar *</label>
               <div className="relative">
                 <select
                   className={`${inputStyle} appearance-none pr-10`}
                   value={form.id_paciente}
                   onChange={(e) => setForm({ ...form, id_paciente: parseInt(e.target.value) })}
                 >
-                  <option value={0}>Seleccioná un paciente</option>
+                  <option value={0}>Seleccioná un familiar</option>
                   {pacientes.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.nombre} {p.apellido} — DNI: {p.identificacion}

@@ -112,7 +112,9 @@ export async function getMisDatos() {
       id: payload.id,
       role: payload.id_rol,
       nameUser: payload.nombre_usuario,
-      nameRole: payload.rol_descripcion
+      nameRole: payload.rol_descripcion,
+      estadoUsuario: payload.id_usuario_estado
+      
     };
   } catch (error) {
     return null;

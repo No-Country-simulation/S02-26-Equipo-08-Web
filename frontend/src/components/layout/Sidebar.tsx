@@ -26,7 +26,7 @@ const menuItems = [
   { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users, roles: [1] },
   { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings, roles: [1] },
   { name: 'Mi Documentación', href: '/admin/dashboard/documentacion', icon: FileCheck, roles: [2, 3] },
-  { name: 'Mis Pacientes', href: '/admin/dashboard/pacientes', icon: Heart, roles: [3] },
+  { name: 'Mis Familiares', href: '/admin/dashboard/pacientes', icon: Heart, roles: [3] },
   { name: 'Mis Solicitudes', href: '/admin/dashboard/solicitudes', icon: CalendarClock, roles: [3] },
 ];
 
@@ -53,13 +53,20 @@ export default function Sidebar({ isOpen, toggleSidebar }: { isOpen: boolean, to
     await logout();
   };
 
-  // --- FILTRADO POR ROL ---
-  // Si el usuario aún no carga, no mostramos nada o solo el Dashboard
+  // --- FILTRADO POR ROL Y ESTADO ---
   const filteredMenuItems = menuItems.filter(item => {
-    if (!user) return item.name === 'Dashboard'; // Evita errores antes de cargar el user
+    // 1. Si los datos aún no cargan, solo mostramos Dashboard por seguridad
+    if (!user) return item.name === 'Dashboard';
+
+    // 2. Validación de Cuidadores NO habilitados (id_rol 2 y estado distinto de 2)
+    if (user.estadoUsuario !== 2) {
+      return item.name === 'Dashboard';
+    }
+
+    // 3. Filtrado normal por rol para usuarios habilitados
     return item.roles.includes(user.role);
   });
-
+  
   return (
     <>
       {/* Overlay para móviles */}

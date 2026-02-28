@@ -250,7 +250,7 @@ export default function PacientesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mis Pacientes</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Mis Familiares</h1>
           <p className="text-sm text-gray-500 mt-1">
             {pacientes.length === 0
               ? "Agregá tu primer paciente"
@@ -266,7 +266,7 @@ export default function PacientesPage() {
             className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-all cursor-pointer"
           >
             <Plus size={16} />
-            Agregar paciente
+            Agregar familiar
           </button>
         )}
       </div>
@@ -502,7 +502,7 @@ export default function PacientesPage() {
               className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 text-white text-sm font-semibold shadow-lg shadow-blue-500/20 hover:shadow-xl transition-all cursor-pointer disabled:opacity-50"
             >
               {enviando && <Loader2 size={14} className="animate-spin" />}
-              {editandoId ? "Guardar cambios" : "Crear paciente"}
+              {editandoId ? "Guardar cambios" : "Crear fammiliar"}
             </button>
           </div>
 
