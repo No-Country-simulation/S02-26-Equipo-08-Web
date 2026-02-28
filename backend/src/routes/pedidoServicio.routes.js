@@ -9,6 +9,9 @@ const {
     listarTareas,
     asignarCuidador,
     desasignarCuidador,
+    iniciarServicio,
+    finalizarServicio,
+    cancelarServicio,
 } = require("../controllers/pedidoServicio.controllers");
 const { verificarToken } = require("../middlewares/auth.middleware");
 
@@ -37,6 +40,15 @@ router.post("/:id/asignar", verificarToken, asignarCuidador);
 
 // DELETE /api/pedidos/:id/asignar — desasignar cuidador y volver el pedido a Pendiente (solo admin)
 router.delete("/:id/asignar", verificarToken, desasignarCuidador);
+
+// PATCH /api/pedidos/:id/iniciar — iniciar servicio (cuidador o admin)
+router.patch("/:id/iniciar", verificarToken, iniciarServicio);
+
+// PATCH /api/pedidos/:id/finalizar — finalizar servicio con informe (cuidador o admin)
+router.patch("/:id/finalizar", verificarToken, finalizarServicio);
+
+// PATCH /api/pedidos/:id/cancelar — cancelar servicio (cuidador, familiar o admin)
+router.patch("/:id/cancelar", verificarToken, cancelarServicio);
 
 // GET /api/pedidos/:id — detalle de una solicitud (debe ir al final para no capturar rutas estáticas)
 router.get("/:id", verificarToken, obtenerSolicitudPorId);

@@ -111,6 +111,7 @@ model pedido_servicio {
   id_pedido_estado           Int?
   fecha_finalizado           DateTime? @db.Date
   observaciones              String?   @db.VarChar(1000)
+  motivo_cancelacion         String?   @db.VarChar(500)
 }
 
 model pedido_estado {
@@ -126,6 +127,7 @@ model asignacion_servico {
   id_pedido        Int
   id_asignado_por  Int?
   fecha_asignacion DateTime? @db.Timestamp(6)
+  informe_cuidado  String?   @db.VarChar(2000)
 }
 
 model tarea {

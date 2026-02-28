@@ -15,6 +15,9 @@ import {
   Search,
   X,
   CheckCircle,
+  Play,
+  FileCheck,
+  XCircle,
 } from "lucide-react";
 import {
   obtenerSolicitudAdmin,
@@ -22,6 +25,9 @@ import {
   listarTareas,
   asignarCuidadorAction,
   desasignarCuidadorAction,
+  iniciarServicioAction,
+  finalizarServicioAction,
+  cancelarServicioAction,
   type SolicitudDetalle,
   type CuidadorActivo,
   type Tarea,
@@ -106,7 +112,6 @@ function SectionCard({
 }
 
 // ─── Modal de asignación ──────────────────────────────────────────────────────
-// Recibe cuidadores y tareas ya cargados desde el padre — no hace fetch propio
 
 function ModalAsignar({
   pedidoId,
@@ -307,6 +312,235 @@ function ModalAsignar({
   );
 }
 
+// ─── Modal de finalización ────────────────────────────────────────────────────
+
+function ModalFinalizar({
+  pedidoId,
+  onClose,
+  onSuccess,
+}: {
+  pedidoId: number;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [informe, setInforme] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [exito, setExito] = useState(false);
+
+  const handleConfirmar = async () => {
+    if (!informe.trim()) {
+      setError("El informe es obligatorio.");
+      return;
+    }
+    setEnviando(true);
+    setError(null);
+    try {
+      const result = await finalizarServicioAction(pedidoId, informe.trim());
+      if (result.success) {
+        setExito(true);
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1200);
+      } else {
+        setError(result.message);
+      }
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-emerald-700 flex items-center gap-2">
+            <FileCheck size={20} />
+            Finalizar servicio
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="px-6 py-4 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+              Informe del cuidado <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={informe}
+              onChange={(e) => setInforme(e.target.value)}
+              rows={5}
+              placeholder="Describe el estado del paciente, tareas realizadas, observaciones relevantes..."
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-500 resize-none"
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <AlertCircle size={14} />
+              {error}
+            </p>
+          )}
+
+          {exito && (
+            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <CheckCircle size={14} />
+              Servicio finalizado correctamente.
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+          <button
+            onClick={onClose}
+            disabled={enviando}
+            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmar}
+            disabled={enviando || exito}
+            className="px-5 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {enviando ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                Finalizando...
+              </>
+            ) : (
+              <>
+                <FileCheck size={15} />
+                Confirmar finalización
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal de cancelación ─────────────────────────────────────────────────────
+
+function ModalCancelar({
+  pedidoId,
+  onClose,
+  onSuccess,
+}: {
+  pedidoId: number;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [motivo, setMotivo] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [exito, setExito] = useState(false);
+
+  const handleConfirmar = async () => {
+    setEnviando(true);
+    setError(null);
+    try {
+      const result = await cancelarServicioAction(pedidoId, motivo.trim() || undefined);
+      if (result.success) {
+        setExito(true);
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 1200);
+      } else {
+        setError(result.message);
+      }
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="text-lg font-bold text-red-600 flex items-center gap-2">
+            <XCircle size={20} />
+            Cancelar solicitud
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="px-6 py-4 space-y-4">
+          <p className="text-sm text-slate-500 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+            Esta acción no se puede deshacer.
+          </p>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+              Motivo de cancelación (opcional)
+            </label>
+            <textarea
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              rows={3}
+              placeholder="Ingresá el motivo de la cancelación..."
+              className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-400/30 focus:border-red-500 resize-none"
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <AlertCircle size={14} />
+              {error}
+            </p>
+          )}
+
+          {exito && (
+            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <CheckCircle size={14} />
+              Solicitud cancelada.
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+          <button
+            onClick={onClose}
+            disabled={enviando}
+            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Volver
+          </button>
+          <button
+            onClick={handleConfirmar}
+            disabled={enviando || exito}
+            className="px-5 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {enviando ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                Cancelando...
+              </>
+            ) : (
+              <>
+                <XCircle size={15} />
+                Confirmar cancelación
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página ──────────────────────────────────────────────────────────────────
 
 export default function SolicitudDetallePage() {
@@ -319,8 +553,11 @@ export default function SolicitudDetallePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showModalFinalizar, setShowModalFinalizar] = useState(false);
+  const [showModalCancelar, setShowModalCancelar] = useState(false);
   const [confirmandoDesasignar, setConfirmandoDesasignar] = useState(false);
   const [desasignando, setDesasignando] = useState(false);
+  const [iniciando, setIniciando] = useState(false);
 
   // Datos para el modal — cargados una sola vez al montar la página
   const [cuidadores, setCuidadores] = useState<CuidadorActivo[]>([]);
@@ -375,7 +612,6 @@ export default function SolicitudDetallePage() {
       if (result.success) {
         setConfirmandoDesasignar(false);
         await cargar();
-        // Recargar cuidadores con disponibilidad actualizada
         listarCuidadoresActivos(id).then(setCuidadores);
       } else {
         setError(result.message);
@@ -386,9 +622,165 @@ export default function SolicitudDetallePage() {
     }
   };
 
-  const esAdmin = role === 1;
-  const esPendiente = Number(solicitud?.id_pedido_estado) === 1;
-  const esAsignado = Number(solicitud?.id_pedido_estado) === 3;
+  const handleIniciar = async () => {
+    setIniciando(true);
+    try {
+      const result = await iniciarServicioAction(id);
+      if (result.success) {
+        await cargar();
+      } else {
+        setError(result.message);
+      }
+    } finally {
+      setIniciando(false);
+    }
+  };
+
+  const esAdmin    = role === 1;
+  const esCuidador = role === 2;
+  const esFamiliar = role === 3;
+  const esPendiente  = Number(solicitud?.id_pedido_estado) === 1;
+  const esAsignado   = Number(solicitud?.id_pedido_estado) === 3;
+  const esEnCurso    = Number(solicitud?.id_pedido_estado) === 4;
+  const esFinalizado = Number(solicitud?.id_pedido_estado) === 5;
+  const esCancelado  = Number(solicitud?.id_pedido_estado) === 6;
+
+  // ── Botones de acción para la SectionCard de asignación ──────────────────────
+  const accionAsignacion = (() => {
+    if (!solicitud?.asignacion_id) return undefined;
+
+    // Admin — estado Asignado (3): Iniciar + Cancelar + Desasignar
+    if (esAdmin && esAsignado) {
+      return (
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button
+            onClick={handleIniciar}
+            disabled={iniciando}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Play size={13} />
+            {iniciando ? "Iniciando..." : "Iniciar"}
+          </button>
+          <button
+            onClick={() => setShowModalCancelar(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <XCircle size={13} />
+            Cancelar
+          </button>
+          {confirmandoDesasignar ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">¿Eliminar asignación?</span>
+              <button
+                onClick={handleDesasignar}
+                disabled={desasignando}
+                className="px-3 py-1.5 text-xs font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {desasignando ? "Eliminando..." : "Confirmar"}
+              </button>
+              <button
+                onClick={() => setConfirmandoDesasignar(false)}
+                disabled={desasignando}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                No
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmandoDesasignar(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X size={13} />
+              Desasignar
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Admin — estado En curso (4): Finalizar + Cancelar
+    if (esAdmin && esEnCurso) {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowModalFinalizar(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer"
+          >
+            <FileCheck size={13} />
+            Finalizar
+          </button>
+          <button
+            onClick={() => setShowModalCancelar(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <XCircle size={13} />
+            Cancelar
+          </button>
+        </div>
+      );
+    }
+
+    // Cuidador — estado Asignado (3): Iniciar + Cancelar
+    if (esCuidador && esAsignado) {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleIniciar}
+            disabled={iniciando}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Play size={13} />
+            {iniciando ? "Iniciando..." : "Iniciar servicio"}
+          </button>
+          <button
+            onClick={() => setShowModalCancelar(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <XCircle size={13} />
+            Cancelar
+          </button>
+        </div>
+      );
+    }
+
+    // Cuidador — estado En curso (4): Finalizar + Cancelar
+    if (esCuidador && esEnCurso) {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowModalFinalizar(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer"
+          >
+            <FileCheck size={13} />
+            Finalizar con informe
+          </button>
+          <button
+            onClick={() => setShowModalCancelar(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            <XCircle size={13} />
+            Cancelar
+          </button>
+        </div>
+      );
+    }
+
+    // Familiar — estado Asignado (3) o En curso (4): solo Cancelar
+    if (esFamiliar && (esAsignado || esEnCurso)) {
+      return (
+        <button
+          onClick={() => setShowModalCancelar(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+        >
+          <XCircle size={13} />
+          Cancelar solicitud
+        </button>
+      );
+    }
+
+    return undefined;
+  })();
 
   // ── Loading ──
   if (loading) {
@@ -429,6 +821,20 @@ export default function SolicitudDetallePage() {
           cuidadores={cuidadores}
           tareas={tareas}
           onClose={() => setShowModal(false)}
+          onSuccess={cargar}
+        />
+      )}
+      {showModalFinalizar && (
+        <ModalFinalizar
+          pedidoId={id}
+          onClose={() => setShowModalFinalizar(false)}
+          onSuccess={cargar}
+        />
+      )}
+      {showModalCancelar && (
+        <ModalCancelar
+          pedidoId={id}
+          onClose={() => setShowModalCancelar(false)}
           onSuccess={cargar}
         />
       )}
@@ -520,37 +926,7 @@ export default function SolicitudDetallePage() {
           <SectionCard
             icon={<UserCheck size={18} />}
             title="Asignación de acompañante"
-            action={
-              esAdmin && esAsignado ? (
-                confirmandoDesasignar ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">¿Eliminar asignación?</span>
-                    <button
-                      onClick={handleDesasignar}
-                      disabled={desasignando}
-                      className="px-3 py-1.5 text-xs font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      {desasignando ? "Eliminando..." : "Confirmar"}
-                    </button>
-                    <button
-                      onClick={() => setConfirmandoDesasignar(false)}
-                      disabled={desasignando}
-                      className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmandoDesasignar(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                  >
-                    <X size={13} />
-                    Eliminar asignación
-                  </button>
-                )
-              ) : undefined
-            }
+            action={accionAsignacion}
           >
             <InfoRow
               label="Acompañante"
@@ -592,6 +968,14 @@ export default function SolicitudDetallePage() {
                   <UserPlus size={13} />
                   Asignar acompañante
                 </button>
+              ) : (esFamiliar && (esAsignado || esEnCurso)) ? (
+                <button
+                  onClick={() => setShowModalCancelar(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <XCircle size={13} />
+                  Cancelar solicitud
+                </button>
               ) : undefined
             }
           >
@@ -606,6 +990,28 @@ export default function SolicitudDetallePage() {
                 )}
               </span>
             </div>
+          </SectionCard>
+        )}
+
+        {/* Informe del cuidado (solo cuando está finalizado) */}
+        {esFinalizado && solicitud.informe_cuidado && (
+          <SectionCard icon={<FileCheck size={18} />} title="Informe del cuidado">
+            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed bg-emerald-50/50 rounded-xl px-4 py-3">
+              {solicitud.informe_cuidado}
+            </p>
+          </SectionCard>
+        )}
+
+        {/* Motivo de cancelación (solo cuando está cancelado) */}
+        {esCancelado && (
+          <SectionCard icon={<XCircle size={18} />} title="Cancelación">
+            {solicitud.motivo_cancelacion ? (
+              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                {solicitud.motivo_cancelacion}
+              </p>
+            ) : (
+              <p className="text-sm italic text-slate-400">Sin motivo registrado.</p>
+            )}
           </SectionCard>
         )}
 
