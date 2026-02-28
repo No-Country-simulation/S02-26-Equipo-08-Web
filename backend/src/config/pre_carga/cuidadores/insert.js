@@ -1,48 +1,48 @@
 const prisma = require('../../database');
-const {cuidadores} = require('./cuidadores')
-
+const { cuidadores } = require('./cuidadores');
 
 const insertarCuidadores = async () => {
-    const cuidadorExistente = await prisma.cuidador.findFirst()
+    const cuidadorExistente = await prisma.cuidador.findFirst();
+    if (cuidadorExistente != null) return;
 
-    if (cuidadorExistente != null){
-        return
+    for (const cuidador of cuidadores) {
+        await insertarCuidador(cuidador);
     }
-
-    cuidadores.forEach(cuidador => {
-        insertarCuidador(cuidador)
-    });
-}
+};
 
 async function insertarCuidador(cuidador) {
     const {
-        id_usuario,
+        email,
         cbu,
         cvu,
         alias,
         con_documentacion,
-        id_cuidador_estado,
         id_autorizado_por,
         fecha_autorizado,
         fecha_ingreso,
-    } = cuidador
+    } = cuidador;
+
+    // Buscar el id_usuario real por email para no depender de IDs hardcodeados
+    const usuario = await prisma.usuario.findUnique({ where: { email } });
+    if (!usuario) {
+        console.warn(`CUIDADOR INS: usuario con email ${email} no encontrado, se omite.`);
+        return;
+    }
 
     const cuidador_ins = await prisma.cuidador.create({
-        data:{
-            id_usuario: id_usuario,
-            cbu: cbu,
-            cvu: cvu,
-            alias: alias,
-            con_documentacion: con_documentacion,
-            id_cuidador_estado: id_cuidador_estado,
-            id_autorizado_por: id_autorizado_por,
-            fecha_autorizado: fecha_autorizado,
-            fecha_ingreso: fecha_ingreso,
-        }
-    })
+        data: {
+            id_usuario: usuario.id,
+            cbu,
+            cvu,
+            alias,
+            con_documentacion,
+            id_autorizado_por,
+            fecha_autorizado,
+            fecha_ingreso,
+        },
+    });
 
-    console.log(`CUIDADOR INS: ${cuidador_ins}`);
-    
+    console.log(`CUIDADOR INS: ${cuidador_ins.id} → ${email} (id_usuario=${usuario.id})`);
 }
 
-module.exports = {insertarCuidadores}
+module.exports = { insertarCuidadores };

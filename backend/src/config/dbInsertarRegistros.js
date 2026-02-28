@@ -10,6 +10,7 @@ const { insertarAsignaciones } = require("./pre_carga/asignacion_servicio/ins");
 const { insertarGuardias } = require("./pre_carga/guardia/ins");
 const { insertarPagos } = require("./pre_carga/pagos/ins");
 const { insertarTiposDocumento } = require("./pre_carga/tipo_documento/ins");
+const { insertarDisponibilidades } = require("./pre_carga/disponibilidad/ins");
 
 const preCargarRoles = async () =>{
 
@@ -170,23 +171,24 @@ async function preCargarEstadosPaciente() {
 }
 
 const insertarDatosPreCargados = async () => {
-    preCargarRoles()
-    preCargarParentezcos()
-    preCargarEstadosPedidos()
-    preCargarEstadosGuardia()
-    preCargarEstadosUsuario()
-    preCargarEstadosPaciente()
-    insertarTiposDocumento()
-    insertarUsuarios()
-    insertarPersonas()
-    insertarCuidadores()
-    insertarFamiliares()
-    insertarPacientes()
-    insertarTareas()
-    insertarPedidosServicios()
-    insertarAsignaciones()
-    insertarGuardias()
-    insertarPagos()
+    await preCargarRoles()
+    await preCargarParentezcos()
+    await preCargarEstadosPedidos()
+    await preCargarEstadosGuardia()
+    await preCargarEstadosUsuario()
+    await preCargarEstadosPaciente()
+    await insertarTiposDocumento()
+    await insertarUsuarios()
+    await insertarPersonas()
+    await insertarCuidadores()
+    await insertarFamiliares()
+    await insertarPacientes()
+    await insertarTareas()
+    await insertarPedidosServicios()
+    await insertarAsignaciones()
+    await insertarGuardias()
+    await insertarPagos()
+    await insertarDisponibilidades()
 }
 
 module.exports = {insertarDatosPreCargados}
