@@ -101,6 +101,7 @@ export interface AsignacionCuidador {
   paciente_diagnostico?: string | null;
   tarea_descripcion?: string | null;
   fecha_asignacion?: string | null;
+  informe_cuidado?: string | null;
 }
 
 export async function listarMisAsignaciones(): Promise<AsignacionCuidador[]> {
@@ -154,6 +155,8 @@ export interface SolicitudDetalle {
   valor_hora?: number | null;
   moneda?: string | null;
   asignado_por_email?: string | null;
+  motivo_cancelacion?: string | null;
+  informe_cuidado?: string | null;
 }
 
 export async function obtenerSolicitudAdmin(id: number): Promise<{
@@ -287,6 +290,67 @@ export async function asignarCuidadorAction(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(datos),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, message: "Error de conexión." };
+  }
+}
+
+export async function iniciarServicioAction(
+  pedidoId: number
+): Promise<{ success: boolean; message: string }> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return { success: false, message: "No autenticado." };
+  try {
+    const res = await fetch(`${API_URL}/pedidos/${pedidoId}/iniciar`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return await res.json();
+  } catch {
+    return { success: false, message: "Error de conexión." };
+  }
+}
+
+export async function finalizarServicioAction(
+  pedidoId: number,
+  informe_cuidado: string
+): Promise<{ success: boolean; message: string }> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return { success: false, message: "No autenticado." };
+  try {
+    const res = await fetch(`${API_URL}/pedidos/${pedidoId}/finalizar`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ informe_cuidado }),
+    });
+    return await res.json();
+  } catch {
+    return { success: false, message: "Error de conexión." };
+  }
+}
+
+export async function cancelarServicioAction(
+  pedidoId: number,
+  motivo?: string
+): Promise<{ success: boolean; message: string }> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  if (!token) return { success: false, message: "No autenticado." };
+  try {
+    const res = await fetch(`${API_URL}/pedidos/${pedidoId}/cancelar`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ motivo_cancelacion: motivo ?? null }),
     });
     return await res.json();
   } catch {

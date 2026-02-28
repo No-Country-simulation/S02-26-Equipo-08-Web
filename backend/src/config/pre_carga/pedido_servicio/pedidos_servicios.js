@@ -82,6 +82,7 @@ const pedidos_servicios = [
         id_pedido_estado: 6,
         fecha_finalizado: null,
         observaciones: 'Cancelado por turno medico del paciente',
+        motivo_cancelacion: 'El paciente tuvo un turno médico urgente que coincidió con el horario del acompañamiento. Se reprogramará para la semana siguiente.',
     },
     // --- pedidos pendientes extra (para testing de asignaciones) ---
     // Disponibilidad de cuidadores activos:

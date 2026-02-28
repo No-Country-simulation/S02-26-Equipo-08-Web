@@ -20,6 +20,7 @@ const asignaciones = [
         id_pedido: 1,
         id_asignado_por: 1,
         fecha_asignacion: new Date('2026-02-19T10:00:00'),
+        informe_cuidado: 'El paciente asistió correctamente al turno escolar. Se mostró tranquilo y colaborativo durante toda la jornada. No se registraron incidentes. Se recomienda continuar con el acompañamiento los próximos martes y jueves.',
     },
     {
         id_cuidador: 2,
@@ -36,6 +37,7 @@ const asignaciones = [
         id_pedido: 4,
         id_asignado_por: 2,
         fecha_asignacion: new Date('2026-02-17T11:00:00'),
+        informe_cuidado: 'Se realizaron los ejercicios de rehabilitación física indicados por el kinesiólogo. El paciente completó la rutina con leve dificultad en los ejercicios de movilidad de cadera. Se sugiere incrementar gradualmente la intensidad en las próximas sesiones.',
     },
     {
         id_cuidador: 2,

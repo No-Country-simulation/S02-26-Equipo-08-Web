@@ -23,6 +23,7 @@ async function insertarPedidoServicio(pedido) {
         id_pedido_estado,
         fecha_finalizado,
         observaciones,
+        motivo_cancelacion,
     } = pedido
 
     const pedidoIns = await prisma.pedido_servicio.create({
@@ -35,6 +36,7 @@ async function insertarPedidoServicio(pedido) {
             id_pedido_estado: id_pedido_estado,
             fecha_finalizado: fecha_finalizado,
             observaciones: observaciones,
+            motivo_cancelacion: motivo_cancelacion || null,
         }
     })
 

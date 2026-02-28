@@ -21,6 +21,7 @@ async function insertarAsignacion(asignacion) {
         id_pedido,
         id_asignado_por,
         fecha_asignacion,
+        informe_cuidado,
     } = asignacion
 
     const asignacionIns = await prisma.asignacion_servico.create({
@@ -31,6 +32,7 @@ async function insertarAsignacion(asignacion) {
             id_pedido: id_pedido,
             id_asignado_por: id_asignado_por,
             fecha_asignacion: fecha_asignacion,
+            informe_cuidado: informe_cuidado || null,
         }
     })
 

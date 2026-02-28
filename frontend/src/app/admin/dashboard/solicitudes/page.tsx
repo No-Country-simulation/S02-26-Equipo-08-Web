@@ -44,6 +44,7 @@ function estadoColorAdmin(estado?: string) {
   const lower = estado.toLowerCase();
   if (lower.includes("pendiente")) return "bg-amber-100 text-amber-700";
   if (lower.includes("asignad") || lower.includes("aprobad")) return "bg-blue-100 text-blue-700";
+  if (lower.includes("en curso")) return "bg-purple-100 text-purple-700";
   if (lower.includes("finalizado") || lower.includes("completad")) return "bg-emerald-100 text-emerald-700";
   if (lower.includes("cancelad") || lower.includes("rechazad")) return "bg-red-100 text-red-600";
   return "bg-gray-100 text-gray-600";
@@ -245,6 +246,7 @@ function SolicitudesAdminView() {
                   <option value="">Todos los estados</option>
                   <option value="1">Pendiente</option>
                   <option value="3">Asignado</option>
+                  <option value="4">En curso</option>
                   <option value="5">Finalizado</option>
                   <option value="6">Cancelado</option>
                 </select>
@@ -861,9 +863,21 @@ function SolicitudesCuidadorView() {
                     )}
                   </div>
                 </div>
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0 ${estadoColorCuidador(a.estado)}`}>
-                  {a.estado || "—"}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className={`text-xs font-semibold px-3 py-1 rounded-full flex-shrink-0 ${estadoColorCuidador(a.estado)}`}>
+                    {a.estado || "—"}
+                  </span>
+                  {Number(a.id_pedido_estado) === 3 && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                      Listo para iniciar
+                    </span>
+                  )}
+                  {Number(a.id_pedido_estado) === 4 && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      En curso — podés finalizar
+                    </span>
+                  )}
+                </div>
               </div>
               {a.observaciones && (
                 <p className="mt-3 text-sm text-gray-500 bg-gray-50 rounded-xl px-4 py-2">

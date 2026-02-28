@@ -407,7 +407,9 @@ const obtenerSolicitudPorId = async (req, res, next) => {
                 t.descripcion                   AS tarea_descripcion,
                 t.valor_hora,
                 t.moneda,
-                ua.email                        AS asignado_por_email
+                ua.email                        AS asignado_por_email,
+                ps.motivo_cancelacion,
+                a.informe_cuidado
             FROM pedido_servicio ps
             LEFT JOIN pedido_estado      pe    ON pe.id           = ps.id_pedido_estado
             LEFT JOIN paciente           pac   ON pac.id          = ps.id_paciente
@@ -632,6 +634,195 @@ const desasignarCuidador = async (req, res, next) => {
     }
 };
 
+// iniciar servicio — PATCH /:id/iniciar (cuidador o admin)
+const iniciarServicio = async (req, res, next) => {
+    try {
+        const idPedido = parseInt(req.params.id);
+        const role = Number(req.user?.role);
+        const userId = req.user?.id;
+
+        if (isNaN(idPedido)) {
+            return res.status(400).json({ success: false, message: "ID de pedido inválido." });
+        }
+
+        const pedido = await prisma.pedido_servicio.findUnique({ where: { id: idPedido } });
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: "Solicitud no encontrada.", errorCode: "PEDIDO_NO_ENCONTRADO" });
+        }
+        if (Number(pedido.id_pedido_estado) !== 3) {
+            return res.status(400).json({ success: false, message: "La solicitud no está en estado Asignado.", errorCode: "PEDIDO_NO_ASIGNADO" });
+        }
+
+        // Si es cuidador, verificar que la asignación le pertenece
+        if (role === 2) {
+            const asignacion = await prisma.$queryRawUnsafe(
+                `SELECT 1 AS ok FROM asignacion_servico a
+                 JOIN cuidador c ON c.id = a.id_cuidador
+                 WHERE a.id_pedido = $1 AND c.id_usuario = $2 LIMIT 1`,
+                idPedido, userId
+            );
+            if (!asignacion.length) {
+                return res.status(403).json({ success: false, message: "Esta asignación no te pertenece.", errorCode: "NO_ES_TU_ASIGNACION" });
+            }
+        } else if (role !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado." });
+        }
+
+        await prisma.pedido_servicio.update({
+            where: { id: idPedido },
+            data: { id_pedido_estado: 4 },
+        });
+
+        await registrarLog({
+            id_usuario: userId,
+            accion: 'INICIAR_SERVICIO',
+            tabla: 'pedido_servicio',
+            detalles: { pedido_id: idPedido, estado_anterior: 3, estado_nuevo: 4 },
+            req,
+        });
+
+        return res.status(200).json({ success: true, data: null, message: "Servicio iniciado. El pedido está En curso." });
+    } catch (error) {
+        console.error("iniciarServicio error:", error.message);
+        next(error);
+    }
+};
+
+// finalizar servicio — PATCH /:id/finalizar (cuidador o admin)
+const finalizarServicio = async (req, res, next) => {
+    try {
+        const idPedido = parseInt(req.params.id);
+        const role = Number(req.user?.role);
+        const userId = req.user?.id;
+        const { informe_cuidado } = req.body;
+
+        if (isNaN(idPedido)) {
+            return res.status(400).json({ success: false, message: "ID de pedido inválido." });
+        }
+        if (!informe_cuidado || !informe_cuidado.trim()) {
+            return res.status(400).json({ success: false, message: "El informe del cuidado es obligatorio." });
+        }
+
+        const pedido = await prisma.pedido_servicio.findUnique({ where: { id: idPedido } });
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: "Solicitud no encontrada.", errorCode: "PEDIDO_NO_ENCONTRADO" });
+        }
+        if (Number(pedido.id_pedido_estado) !== 4) {
+            return res.status(400).json({ success: false, message: "La solicitud no está En curso.", errorCode: "PEDIDO_NO_EN_CURSO" });
+        }
+
+        // Obtener la asignación del pedido
+        const asignacion = await prisma.asignacion_servico.findFirst({
+            where: { id_pedido: idPedido },
+            orderBy: { id: 'desc' },
+        });
+        if (!asignacion) {
+            return res.status(400).json({ success: false, message: "No hay asignación para este pedido.", errorCode: "SIN_ASIGNACION" });
+        }
+
+        // Si es cuidador, verificar propiedad
+        if (role === 2) {
+            const check = await prisma.$queryRawUnsafe(
+                `SELECT 1 AS ok FROM cuidador WHERE id = $1 AND id_usuario = $2 LIMIT 1`,
+                asignacion.id_cuidador, userId
+            );
+            if (!check.length) {
+                return res.status(403).json({ success: false, message: "Esta asignación no te pertenece.", errorCode: "NO_ES_TU_ASIGNACION" });
+            }
+        } else if (role !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado." });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.asignacion_servico.update({
+                where: { id: asignacion.id },
+                data: { informe_cuidado: informe_cuidado.trim() },
+            });
+            await tx.pedido_servicio.update({
+                where: { id: idPedido },
+                data: { id_pedido_estado: 5, fecha_finalizado: new Date() },
+            });
+        });
+
+        await registrarLog({
+            id_usuario: userId,
+            accion: 'FINALIZAR_SERVICIO',
+            tabla: 'pedido_servicio',
+            detalles: { pedido_id: idPedido, estado_anterior: 4, estado_nuevo: 5 },
+            req,
+        });
+
+        return res.status(200).json({ success: true, data: null, message: "Servicio finalizado correctamente." });
+    } catch (error) {
+        console.error("finalizarServicio error:", error.message);
+        next(error);
+    }
+};
+
+// cancelar servicio — PATCH /:id/cancelar (cuidador, familiar o admin)
+const cancelarServicio = async (req, res, next) => {
+    try {
+        const idPedido = parseInt(req.params.id);
+        const role = Number(req.user?.role);
+        const userId = req.user?.id;
+        const { motivo_cancelacion } = req.body;
+
+        if (isNaN(idPedido)) {
+            return res.status(400).json({ success: false, message: "ID de pedido inválido." });
+        }
+
+        const pedido = await prisma.pedido_servicio.findUnique({ where: { id: idPedido } });
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: "Solicitud no encontrada.", errorCode: "PEDIDO_NO_ENCONTRADO" });
+        }
+        const estadoActual = Number(pedido.id_pedido_estado);
+        if (estadoActual !== 3 && estadoActual !== 4) {
+            return res.status(400).json({ success: false, message: "Solo se puede cancelar una solicitud Asignada o En curso.", errorCode: "ESTADO_NO_CANCELABLE" });
+        }
+
+        if (role === 3) {
+            // Familiar: solo puede cancelar sus propios pedidos
+            if (pedido.id_usuario !== userId) {
+                return res.status(403).json({ success: false, message: "No podés cancelar este pedido.", errorCode: "NO_ES_TU_PEDIDO" });
+            }
+        } else if (role === 2) {
+            // Cuidador: verificar que la asignación le pertenece
+            const asignacion = await prisma.$queryRawUnsafe(
+                `SELECT 1 AS ok FROM asignacion_servico a
+                 JOIN cuidador c ON c.id = a.id_cuidador
+                 WHERE a.id_pedido = $1 AND c.id_usuario = $2 LIMIT 1`,
+                idPedido, userId
+            );
+            if (!asignacion.length) {
+                return res.status(403).json({ success: false, message: "Esta asignación no te pertenece.", errorCode: "NO_ES_TU_ASIGNACION" });
+            }
+        } else if (role !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado." });
+        }
+
+        await prisma.pedido_servicio.update({
+            where: { id: idPedido },
+            data: {
+                id_pedido_estado: 6,
+                motivo_cancelacion: motivo_cancelacion?.trim() || null,
+            },
+        });
+
+        await registrarLog({
+            id_usuario: userId,
+            accion: 'CANCELAR_SERVICIO',
+            tabla: 'pedido_servicio',
+            detalles: { pedido_id: idPedido, estado_anterior: estadoActual, estado_nuevo: 6, motivo: motivo_cancelacion || null },
+            req,
+        });
+
+        return res.status(200).json({ success: true, data: null, message: "Solicitud cancelada." });
+    } catch (error) {
+        console.error("cancelarServicio error:", error.message);
+        next(error);
+    }
+};
+
 module.exports = {
     solicitarServicio,
     solicitarServicioAcompanamiento,
@@ -642,4 +833,7 @@ module.exports = {
     listarTareas,
     asignarCuidador,
     desasignarCuidador,
+    iniciarServicio,
+    finalizarServicio,
+    cancelarServicio,
 };
