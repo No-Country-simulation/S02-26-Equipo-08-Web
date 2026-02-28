@@ -30,6 +30,20 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (isMatch) {
+      // 4. Verificar que el usuario esté activo (estado 2 = Activo)
+      //    Los administradores (rol 1) siempre pueden ingresar
+      if (user.id_rol !== 1 && user.id_usuario_estado !== 2) {
+        const mensajesEstado = {
+          1: "Tu cuenta está pendiente de aprobación. Contactá al administrador.",
+          3: "Tu cuenta fue rechazada. Contactá al administrador.",
+          4: "Tu cuenta ha sido desactivada. Contactá al administrador.",
+        };
+        return res.status(403).json({
+          message: mensajesEstado[user.id_usuario_estado] || "Tu cuenta no está habilitada. Contactá al administrador.",
+          errorCode: "USUARIO_NO_HABILITADO",
+        });
+      }
+
       // Obtener persona asociada por id_usuario (sin relación Prisma)
       const persona = await prisma.persona.findUnique({
         where: { id_usuario: user.id },
