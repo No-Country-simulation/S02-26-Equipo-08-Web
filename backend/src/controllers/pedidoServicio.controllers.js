@@ -228,8 +228,406 @@ const listarPedidosPorUsuario = async (req, res, next) => {
     }
 };
 
+// listar todas las solicitudes (solo admin — rol=1)
+const listarSolicitudesAdmin = async (req, res, next) => {
+    try {
+        // --- 1. Auth ---
+        console.log("[solicitudesAdmin] req.user:", req.user);
+        if (!req.user || Number(req.user.role) !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado. Solo administradores." });
+        }
+
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 10);
+        const offset = (page - 1) * limit;
+        const { estado, busqueda, fechaInicio, fechaFin } = req.query;
+
+        // --- 2. COUNT simple (sin JOINs extras) ---
+        const countResult = await prisma.$queryRawUnsafe(
+            `SELECT COUNT(*)::int AS total FROM pedido_servicio`
+        );
+        const total = Number(countResult[0]?.total ?? 0);
+        console.log("[solicitudesAdmin] total pedidos:", total);
+
+        // --- 3. Construir WHERE para data query ---
+        const whereClauses = [];
+        const params = [];
+        let idx = 1;
+
+        if (busqueda && busqueda.trim()) {
+            const term = `%${busqueda.toLowerCase()}%`;
+            whereClauses.push(`(LOWER(pac.nombre || ' ' || pac.apellido) LIKE $${idx} OR LOWER(pf.nombre || ' ' || pf.apellido) LIKE $${idx})`);
+            params.push(term);
+            idx++;
+        }
+        if (estado) {
+            whereClauses.push(`ps.id_pedido_estado = $${idx}`);
+            params.push(parseInt(estado));
+            idx++;
+        }
+        if (fechaInicio) {
+            whereClauses.push(`ps.fecha_del_servicio::date >= $${idx}::date`);
+            params.push(fechaInicio);
+            idx++;
+        }
+        if (fechaFin) {
+            whereClauses.push(`ps.fecha_del_servicio::date <= $${idx}::date`);
+            params.push(fechaFin);
+            idx++;
+        }
+        const whereStr = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+        // --- 4. Data query ---
+        const dataQuery = `
+            SELECT
+                ps.id,
+                ps.fecha_del_servicio,
+                ps.hora_inicio,
+                ps.cantidad_horas_solicitadas,
+                ps.observaciones,
+                ps.id_pedido_estado,
+                pe.descripcion                AS estado,
+                pac.nombre                    AS paciente_nombre,
+                pac.apellido                  AS paciente_apellido,
+                pf.nombre                     AS familiar_nombre,
+                pf.apellido                   AS familiar_apellido,
+                u.email                       AS familiar_email,
+                pc.nombre                     AS cuidador_nombre,
+                pc.apellido                   AS cuidador_apellido
+            FROM pedido_servicio ps
+            LEFT JOIN pedido_estado      pe  ON pe.id          = ps.id_pedido_estado
+            LEFT JOIN paciente           pac ON pac.id         = ps.id_paciente
+            LEFT JOIN usuario            u   ON u.id           = ps.id_usuario
+            LEFT JOIN persona            pf  ON pf.id_usuario  = ps.id_usuario
+            LEFT JOIN asignacion_servico a   ON a.id           = (
+                SELECT MAX(a2.id) FROM asignacion_servico a2 WHERE a2.id_pedido = ps.id
+            )
+            LEFT JOIN cuidador           c   ON c.id           = a.id_cuidador
+            LEFT JOIN persona            pc  ON pc.id_usuario  = c.id_usuario
+            ${whereStr}
+            ORDER BY ps.id DESC
+            LIMIT $${idx} OFFSET $${idx + 1}
+        `;
+
+        console.log("[solicitudesAdmin] whereStr:", whereStr || "(sin filtros)");
+
+        const solicitudes = await prisma.$queryRawUnsafe(dataQuery, ...params, limit, offset);
+        console.log("[solicitudesAdmin] filas devueltas:", solicitudes.length);
+
+        // Para el count con filtros aplicamos el mismo WHERE en una query separada
+        let totalFiltrado = total;
+        if (whereClauses.length > 0) {
+            const countFiltradoResult = await prisma.$queryRawUnsafe(
+                `SELECT COUNT(*)::int AS total
+                 FROM pedido_servicio ps
+                 LEFT JOIN paciente pac ON pac.id = ps.id_paciente
+                 LEFT JOIN persona   pf ON pf.id_usuario = ps.id_usuario
+                 ${whereStr}`,
+                ...params
+            );
+            totalFiltrado = Number(countFiltradoResult[0]?.total ?? 0);
+        }
+
+        const totalPages = Math.ceil(totalFiltrado / limit);
+
+        return res.status(200).json({
+            success: true,
+            data: { solicitudes, total: totalFiltrado, totalPages },
+            message: "OK",
+        });
+    } catch (error) {
+        console.error("[solicitudesAdmin] ERROR:", error.message, error.stack?.split('\n')[1]);
+        next(error);
+    }
+};
+
+// obtener detalle de una solicitud por ID
+const obtenerSolicitudPorId = async (req, res, next) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({ success: false, message: "ID de solicitud inválido." });
+        }
+
+        const role = Number(req.user?.role);
+        const userId = req.user?.id;
+
+        // Familiar: solo puede ver sus propias solicitudes
+        if (role === 3) {
+            const check = await prisma.$queryRawUnsafe(
+                `SELECT 1 AS ok FROM pedido_servicio WHERE id = $1 AND id_usuario = $2 LIMIT 1`,
+                id, userId
+            );
+            if (!check.length) {
+                return res.status(403).json({ success: false, message: "Acceso denegado." });
+            }
+        }
+        // Cuidador: solo puede ver solicitudes que le fueron asignadas
+        else if (role === 2) {
+            const check = await prisma.$queryRawUnsafe(
+                `SELECT 1 AS ok FROM asignacion_servico a
+                 JOIN cuidador c ON c.id = a.id_cuidador
+                 WHERE a.id_pedido = $1 AND c.id_usuario = $2 LIMIT 1`,
+                id, userId
+            );
+            if (!check.length) {
+                return res.status(403).json({ success: false, message: "Acceso denegado." });
+            }
+        }
+        // Otros roles no admin: acceso denegado
+        else if (role !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado." });
+        }
+
+        const result = await prisma.$queryRawUnsafe(`
+            SELECT
+                ps.id,
+                ps.fecha_del_servicio,
+                ps.hora_inicio,
+                ps.cantidad_horas_solicitadas,
+                ps.observaciones,
+                ps.id_pedido_estado,
+                pe.descripcion                  AS estado,
+                pac.nombre                      AS paciente_nombre,
+                pac.apellido                    AS paciente_apellido,
+                pac.diagnostico                 AS paciente_diagnostico,
+                pac.obra_social                 AS paciente_obra_social,
+                pac.nro_afiliado                AS paciente_nro_afiliado,
+                pf.nombre                       AS familiar_nombre,
+                pf.apellido                     AS familiar_apellido,
+                pf.identificacion               AS familiar_identificacion,
+                pf.telefono                     AS familiar_telefono,
+                u.email                         AS familiar_email,
+                par.descripcion                 AS parentesco,
+                a.id                            AS asignacion_id,
+                a.fecha_asignacion,
+                pcuid.nombre                    AS cuidador_nombre,
+                pcuid.apellido                  AS cuidador_apellido,
+                ucuid.email                     AS cuidador_email,
+                t.descripcion                   AS tarea_descripcion,
+                t.valor_hora,
+                t.moneda,
+                ua.email                        AS asignado_por_email
+            FROM pedido_servicio ps
+            LEFT JOIN pedido_estado      pe    ON pe.id           = ps.id_pedido_estado
+            LEFT JOIN paciente           pac   ON pac.id          = ps.id_paciente
+            LEFT JOIN usuario            u     ON u.id            = ps.id_usuario
+            LEFT JOIN persona            pf    ON pf.id_usuario   = ps.id_usuario
+            LEFT JOIN familiar           f     ON f.id_usuario    = ps.id_usuario
+                                              AND f.id_paciente   = ps.id_paciente
+            LEFT JOIN parentesco         par   ON par.id          = f.id_parentesco
+            LEFT JOIN asignacion_servico a     ON a.id            = (
+                SELECT MAX(a2.id) FROM asignacion_servico a2 WHERE a2.id_pedido = ps.id
+            )
+            LEFT JOIN cuidador           c     ON c.id            = a.id_cuidador
+            LEFT JOIN persona            pcuid ON pcuid.id_usuario = c.id_usuario
+            LEFT JOIN usuario            ucuid ON ucuid.id         = c.id_usuario
+            LEFT JOIN tarea              t     ON t.id             = a.id_tarea
+            LEFT JOIN usuario            ua    ON ua.id            = a.id_asignado_por
+            WHERE ps.id = $1
+        `, id);
+
+        if (!result.length) {
+            return res.status(404).json({ success: false, message: "Solicitud no encontrada." });
+        }
+
+        return res.status(200).json({ success: true, data: result[0], message: "OK" });
+    } catch (error) {
+        console.error("obtenerSolicitudPorId error:", error.message);
+        next(error);
+    }
+};
+
+// listar solicitudes asignadas al cuidador autenticado
+const listarAsignacionesCuidador = async (req, res, next) => {
+    try {
+        if (!req.user || Number(req.user.role) !== 2) {
+            return res.status(403).json({ success: false, message: "Acceso denegado. Solo cuidadores." });
+        }
+
+        const solicitudes = await prisma.$queryRawUnsafe(`
+            SELECT
+                ps.id,
+                ps.fecha_del_servicio,
+                ps.hora_inicio,
+                ps.cantidad_horas_solicitadas,
+                ps.observaciones,
+                ps.id_pedido_estado,
+                pe.descripcion  AS estado,
+                pac.nombre      AS paciente_nombre,
+                pac.apellido    AS paciente_apellido,
+                pac.diagnostico AS paciente_diagnostico,
+                t.descripcion   AS tarea_descripcion,
+                a.fecha_asignacion
+            FROM asignacion_servico a
+            JOIN cuidador           c   ON c.id   = a.id_cuidador
+            JOIN pedido_servicio    ps  ON ps.id  = a.id_pedido
+            LEFT JOIN pedido_estado pe  ON pe.id  = ps.id_pedido_estado
+            LEFT JOIN paciente      pac ON pac.id = ps.id_paciente
+            LEFT JOIN tarea         t   ON t.id   = a.id_tarea
+            WHERE c.id_usuario = $1
+            ORDER BY ps.id DESC
+        `, req.user.id);
+
+        return res.status(200).json({ success: true, data: solicitudes, message: "OK" });
+    } catch (error) {
+        console.error("listarAsignacionesCuidador error:", error.message);
+        next(error);
+    }
+};
+
+// listar tareas disponibles (solo admin)
+const listarTareas = async (req, res, next) => {
+    try {
+        if (!req.user || Number(req.user.role) !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado. Solo administradores." });
+        }
+        const tareas = await prisma.tarea.findMany({ orderBy: { id: 'asc' } });
+        return res.status(200).json({ success: true, data: tareas, message: "OK" });
+    } catch (error) {
+        console.error("listarTareas error:", error.message);
+        next(error);
+    }
+};
+
+// asignar cuidador a una solicitud pendiente (solo admin)
+const asignarCuidador = async (req, res, next) => {
+    try {
+        if (!req.user || Number(req.user.role) !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado. Solo administradores." });
+        }
+
+        const idPedido = parseInt(req.params.id);
+        const { id_cuidador, id_tarea } = req.body;
+
+        if (isNaN(idPedido) || !id_cuidador || !id_tarea) {
+            return res.status(400).json({ success: false, message: "Faltan datos requeridos (id_cuidador, id_tarea)." });
+        }
+
+        const resultado = await prisma.$transaction(async (tx) => {
+            const pedido = await tx.pedido_servicio.findUnique({ where: { id: idPedido } });
+            if (!pedido) throw new Error("PEDIDO_NO_ENCONTRADO");
+            if (Number(pedido.id_pedido_estado) !== 1) throw new Error("PEDIDO_NO_PENDIENTE");
+
+            const cuidador = await tx.cuidador.findUnique({ where: { id: parseInt(id_cuidador) } });
+            if (!cuidador) throw new Error("CUIDADOR_NO_ENCONTRADO");
+
+            const tarea = await tx.tarea.findUnique({ where: { id: parseInt(id_tarea) } });
+            if (!tarea) throw new Error("TAREA_NO_ENCONTRADA");
+
+            // Verificar que el cuidador no tenga asignaciones superpuestas en el mismo rango horario
+            const conflictos = await tx.$queryRawUnsafe(`
+                SELECT COUNT(*)::int AS total
+                FROM asignacion_servico a
+                JOIN pedido_servicio ps ON ps.id = a.id_pedido
+                WHERE a.id_cuidador = $1
+                  AND ps.id != $2
+                  AND COALESCE(ps.id_pedido_estado, 0) NOT IN (5, 6)
+                  AND ps.fecha_del_servicio::date = $3::date
+                  AND ps.hora_inicio::time < ($4::time + ($5 * INTERVAL '1 hour'))
+                  AND (ps.hora_inicio::time + (ps.cantidad_horas_solicitadas * INTERVAL '1 hour')) > $4::time
+            `, parseInt(id_cuidador), idPedido, pedido.fecha_del_servicio, pedido.hora_inicio, pedido.cantidad_horas_solicitadas);
+            if (Number(conflictos[0]?.total) > 0) throw new Error("CUIDADOR_NO_DISPONIBLE");
+
+            const asignacion = await tx.asignacion_servico.create({
+                data: {
+                    id_cuidador: parseInt(id_cuidador),
+                    id_paciente: pedido.id_paciente,
+                    id_tarea: parseInt(id_tarea),
+                    id_pedido: idPedido,
+                    id_asignado_por: req.user.id,
+                    fecha_asignacion: new Date(),
+                },
+            });
+
+            await tx.pedido_servicio.update({
+                where: { id: idPedido },
+                data: { id_pedido_estado: 3 },
+            });
+
+            return asignacion;
+        });
+
+        await registrarLog({
+            id_usuario: req.user.id,
+            accion: 'ASIGNACION_CUIDADOR',
+            tabla: 'asignacion_servico',
+            detalles: { pedido_id: idPedido, cuidador_id: id_cuidador, tarea_id: id_tarea },
+            req,
+        });
+
+        return res.status(200).json({ success: true, data: resultado, message: "Cuidador asignado exitosamente." });
+    } catch (error) {
+        const errorMap = {
+            "PEDIDO_NO_ENCONTRADO": "Solicitud no encontrada.",
+            "PEDIDO_NO_PENDIENTE": "La solicitud no está en estado Pendiente y no puede ser asignada.",
+            "CUIDADOR_NO_ENCONTRADO": "Cuidador no encontrado.",
+            "TAREA_NO_ENCONTRADA": "Tarea no encontrada.",
+            "CUIDADOR_NO_DISPONIBLE": "El acompañante ya tiene una asignación en ese rango horario.",
+        };
+        const mensaje = errorMap[error.message];
+        if (mensaje) return res.status(400).json({ success: false, message: mensaje });
+
+        console.error("asignarCuidador error:", error.message);
+        next(error);
+    }
+};
+
+// desasignar cuidador de una solicitud (solo admin)
+const desasignarCuidador = async (req, res, next) => {
+    try {
+        if (!req.user || Number(req.user.role) !== 1) {
+            return res.status(403).json({ success: false, message: "Acceso denegado. Solo administradores." });
+        }
+
+        const idPedido = parseInt(req.params.id);
+        if (isNaN(idPedido)) {
+            return res.status(400).json({ success: false, message: "ID de pedido inválido." });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            const pedido = await tx.pedido_servicio.findUnique({ where: { id: idPedido } });
+            if (!pedido) throw new Error("PEDIDO_NO_ENCONTRADO");
+            if (Number(pedido.id_pedido_estado) !== 3) throw new Error("PEDIDO_NO_ASIGNADO");
+
+            await tx.asignacion_servico.deleteMany({ where: { id_pedido: idPedido } });
+
+            await tx.pedido_servicio.update({
+                where: { id: idPedido },
+                data: { id_pedido_estado: 1 },
+            });
+        });
+
+        await registrarLog({
+            id_usuario: req.user.id,
+            accion: 'DESASIGNACION_CUIDADOR',
+            tabla: 'asignacion_servico',
+            detalles: { pedido_id: idPedido },
+            req,
+        });
+
+        return res.status(200).json({ success: true, data: null, message: "Acompañante desasignado. El pedido volvió a estado Pendiente." });
+    } catch (error) {
+        const errorMap = {
+            "PEDIDO_NO_ENCONTRADO": "Solicitud no encontrada.",
+            "PEDIDO_NO_ASIGNADO": "La solicitud no tiene un acompañante asignado.",
+        };
+        const mensaje = errorMap[error.message];
+        if (mensaje) return res.status(400).json({ success: false, message: mensaje });
+
+        console.error("desasignarCuidador error:", error.message);
+        next(error);
+    }
+};
+
 module.exports = {
     solicitarServicio,
     solicitarServicioAcompanamiento,
     listarPedidosPorUsuario,
+    listarSolicitudesAdmin,
+    obtenerSolicitudPorId,
+    listarAsignacionesCuidador,
+    listarTareas,
+    asignarCuidador,
+    desasignarCuidador,
 };

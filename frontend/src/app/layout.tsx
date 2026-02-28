@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Inter, Playfair_Display } from "next/font/google";
 import { UserProvider } from "../context/UserContext";
+import { getMisDatos } from "../actions/auth";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -32,17 +33,20 @@ export const metadata: Metadata = {
   description: "Plataforma para gestión de acompañantes terapéuticos. Centraliza turnos, informes y pagos.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Leemos el usuario en el servidor durante el SSR para evitar el flash de carga
+  const initialUser = await getMisDatos().catch(() => null);
+
   return (
     <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${playfair.variable} antialiased`}
       >
-          <UserProvider initialUser={null}>
+        <UserProvider initialUser={initialUser as any}>
           {children}
           <Toaster richColors position="top-right" />
         </UserProvider>

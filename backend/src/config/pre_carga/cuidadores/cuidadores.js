@@ -1,19 +1,12 @@
 // datos de ejemplo para popular la tabla cuidador
-// los id_usuario corresponden a los cuidadores creados en dbInsertarRegistros.js
-// id_usuario 3: Ana Garcia (estado A - activa)
-// id_usuario 4: Lucas Moix (estado A - activo)
-// id_usuario 5: Sofia Fernandez (estado PA - pendiente aceptar)
-// id_usuario 6: Diego Torres (estado R - rechazado)
-// id_usuario 7: Camila Herrera (estado D - desactivada)
-//
-// estados posibles del usuario: 'PA' pendiente aceptar, 'A' aceptado, 'R' rechazado, 'D' desactivado
-// activo = 1 unicamente cuando estado = 'A'
+// email: se usa para buscar el id_usuario real en tiempo de inserción
+// (evita IDs hardcodeados que se desalinean por inserts en paralelo)
 //
 // id_autorizado_por: id del usuario admin que autorizo al cuidador (1 = Carlos Martinez, 2 = Valeria Ruiz)
 
 const cuidadores = [
     {
-        id_usuario: 3,
+        email: 'cuidador1@sistema.com',
         cbu: '0110599940000012345678',
         cvu: null,
         alias: 'ana.garcia.mp',
@@ -23,7 +16,7 @@ const cuidadores = [
         fecha_ingreso: new Date('2025-06-01'),
     },
     {
-        id_usuario: 4,
+        email: 'lmoix@gmail.com',
         cbu: null,
         cvu: '0000003100092748532901',
         alias: 'lucas.moix.mp',
@@ -33,7 +26,7 @@ const cuidadores = [
         fecha_ingreso: new Date('2025-07-10'),
     },
     {
-        id_usuario: 5,
+        email: 'cuidador3@sistema.com',
         cbu: null,
         cvu: null,
         alias: null,
@@ -43,7 +36,7 @@ const cuidadores = [
         fecha_ingreso: new Date('2026-01-15'),
     },
     {
-        id_usuario: 6,
+        email: 'cuidador4@sistema.com',
         cbu: '0140312301600430217890',
         cvu: null,
         alias: 'diego.torres.bna',
@@ -53,7 +46,7 @@ const cuidadores = [
         fecha_ingreso: new Date('2026-02-01'),
     },
     {
-        id_usuario: 7,
+        email: 'cuidador5@sistema.com',
         cbu: '0720054720000087654321',
         cvu: null,
         alias: 'camila.herrera.sant',
