@@ -2,6 +2,12 @@
 
 import type { RegistroResponse } from "@/src/types/registro";
 
+export interface DisponibilidadDia {
+  dia_semana: number;   // 1=Lunes ... 7=Domingo
+  hora_inicio: string;  // "HH:MM"
+  hora_fin: string;     // "HH:MM"
+}
+
 // registrar un cuidador (POST /api/registro/cuidador)
 export async function registrarCuidadorAction(data: {
   email: string;
@@ -15,6 +21,7 @@ export async function registrarCuidadorAction(data: {
   cbu?: string;
   cvu?: string;
   alias?: string;
+  disponibilidades?: DisponibilidadDia[];
 }): Promise<RegistroResponse> {
   try {
     const res = await fetch(

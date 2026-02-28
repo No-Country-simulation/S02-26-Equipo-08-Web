@@ -1,11 +1,32 @@
 const prisma = require("../config/database");
 const bcrypt = require('bcrypt');
+const { registrarLog } = require('../utils/auditoria');
+const { 
+    crearPersonaDb, 
+    buscarPersonaIdentificacionDb, 
+    buscarPersonaTelefonoDb 
+} = require('./persona.controllers');
 
 // --- FUNCIONES DB ---
 
+/*
 async function buscarUsuarioEmailDb(email) {
-    return await prisma.usuario.findUnique({ where: { email: email } })
+    return await prisma.usuario.findUnique({ where: { email: email.toLowerCase() } })
 }
+*/
+
+async function buscarUsuarioEmailDb(tx, email) {
+    // Si solo viene un argumento, asumimos que es el email y usamos prisma global
+    const client = email ? tx : prisma;
+    const emailAUsar = email || tx;
+
+    if (!emailAUsar || typeof emailAUsar !== 'string') return null;
+
+    return await client.usuario.findUnique({ 
+        where: { email: emailAUsar.toLowerCase().trim() } 
+    });
+}
+
 
 async function desbloquearUsuarioDb(id) {
     return await prisma.usuario.update({
@@ -39,7 +60,99 @@ async function crearUsuarioDb(tx, datos) {
     return usuario
 }
 
+// --- LÓGICA CORE: REGISTRO TRANSACCIONAL ---
+
+async function ejecutarRegistroTransaccional(tx, datos, req) {
+    const { 
+        email, password, nombre, apellido, 
+        identificacion, direccion, telefono, 
+        edad, id_rol, id_usuario_estado 
+    } = datos;
+
+    // 1. VALIDACIONES: Si alguna falla, lanza error y detiene la transacción
+    const existeEmail = await buscarUsuarioEmailDb(tx, email);
+    if (existeEmail) throw new Error("EMAIL_ALREADY_EXISTS");
+
+    const existeDni = await buscarPersonaIdentificacionDb(tx, identificacion);
+    if (existeDni) throw new Error("DNI_ALREADY_EXISTS");
+
+    const existeTel = await buscarPersonaTelefonoDb(tx, telefono);
+    if (existeTel) throw new Error("TELEFONO_ALREADY_EXISTS");
+
+    // 2. PROCESAMIENTO: Hashear contraseña
+        const passwordHash = await bcrypt.hash(password, 10);
+
+    // 3. PASO A: Crear Usuario
+            const nuevoUsuario = await tx.usuario.create({
+                data: {
+                    email: String(email).toLowerCase(),
+                    password_hash: passwordHash,
+                    id_rol: parseInt(id_rol),
+                    id_usuario_estado: parseInt(id_usuario_estado) || 1
+                }
+            });
+
+    // 4. PASO B: Crear Persona vinculada al Usuario
+    const nuevaPersona = await crearPersonaDb(tx, {
+        id_usuario: nuevoUsuario.id,
+        nombre, apellido, identificacion, direccion, telefono, edad
+    });
+
+    // 5. PASO C: Log de Auditoría (Solo se ejecuta si A y B fueron exitosos)
+        await registrarLog({
+        tx, // Se guarda como parte de la misma transacción
+        id_usuario: nuevoUsuario.id,
+            accion: 'REGISTRO_NUEVO_USUARIO',
+            tabla: 'usuario / persona',
+            detalles: { 
+            email: nuevoUsuario.email, 
+                        nombre_completo: `${nombre} ${apellido}`,
+            identificacion
+        },
+        req: req
+    });
+
+    return { usuario: nuevoUsuario, persona: nuevaPersona };
+}
+
+
+
+
 // --- ENDPOINTS ---
+
+const registrarUsuario = async (req, res, next) => {
+    try {
+        // prisma.$transaction garantiza que todo sea "todo o nada"
+        const resultado = await prisma.$transaction(async (tx) => {
+            return await ejecutarRegistroTransaccional(tx, req.body, req);
+        });
+
+        return res.status(201).json({ 
+            success: true, 
+            message: "Usuario registrado y auditado con éxito.", 
+            data: resultado 
+        });
+
+    } catch (error) {
+        // Mapeo de errores para respuestas claras al cliente
+        const errorMessages = {
+            "EMAIL_ALREADY_EXISTS": "El correo electrónico ya está registrado.",
+            "DNI_ALREADY_EXISTS": "El DNI/Identificación ya está en uso.",
+            "TELEFONO_ALREADY_EXISTS": "El número de teléfono ya está registrado."
+        };
+
+        const mensajeCliente = errorMessages[error.message];
+
+        if (mensajeCliente) {
+            return res.status(400).json({ success: false, message: mensajeCliente });
+        }
+
+        console.error("Fallo crítico en el proceso de registro:", error);
+        next(error); 
+    }
+};
+
+
 
 // endpoint: buscar usuario por email
 const buscarUsuarioEmail = async (req, res, next) => {
@@ -324,11 +437,82 @@ const obtenerUsuarioPorId = async (req, res, next) => {
     }
 }
 
+// endpoint: cambiar estado de un usuario (Pendiente/Activo/Rechazado/Desactivado)
+const cambiarEstadoUsuario = async (req, res, next) => {
+    const { id } = req.params;
+    const { id_admin, nuevo_estado } = req.body;
+
+    const estadosValidos = [1, 2, 3, 4];
+    const nuevoEstadoInt = parseInt(nuevo_estado);
+
+    if (!nuevo_estado || !estadosValidos.includes(nuevoEstadoInt)) {
+        return res.status(400).json({
+            success: false,
+            data: null,
+            message: 'Estado inválido. Debe ser 1 (Pendiente), 2 (Activo), 3 (Rechazado) o 4 (Desactivado).'
+        });
+    }
+
+    try {
+        const usuarioActual = await prisma.usuario.findUnique({
+            where: { id: parseInt(id) },
+            select: { id_usuario_estado: true, email: true }
+        });
+
+        if (!usuarioActual) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Usuario no encontrado.'
+            });
+        }
+
+        const estadoAnterior = usuarioActual.id_usuario_estado;
+
+        const usuarioActualizado = await prisma.usuario.update({
+            where: { id: parseInt(id) },
+            data: { id_usuario_estado: nuevoEstadoInt }
+        });
+
+        try {
+            await prisma.log_auditoria.create({
+                data: {
+                    id_usuario: parseInt(id_admin) || 0,
+                    accion: 'CAMBIO_ESTADO',
+                    tabla_afectada: 'usuario',
+                    valor_anterior: { id_usuario_estado: estadoAnterior },
+                    valor_nuevo: { id_usuario_estado: nuevoEstadoInt, id_objetivo: parseInt(id) },
+                    ip_direccion: req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1'
+                }
+            });
+        } catch (auditError) {
+            console.error('Error grabando auditoría de cambio de estado:', auditError);
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: usuarioActualizado.id,
+                id_usuario_estado: usuarioActualizado.id_usuario_estado
+            },
+            message: 'Estado del usuario actualizado correctamente.'
+        });
+    } catch (error) {
+        console.error(`cambiarEstadoUsuario error: ${error}`);
+        if (error.code === 'P2025') {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+        }
+        next(error);
+    }
+};
+
 module.exports = {
     buscarUsuarioEmailDb,
     crearUsuarioDb,
     buscarUsuarioEmail,
     desbloquearUsuario,
     listarUsuarios,
-    obtenerUsuarioPorId
+    obtenerUsuarioPorId,
+    cambiarEstadoUsuario,
+    registrarUsuario
 };

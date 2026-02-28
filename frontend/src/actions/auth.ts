@@ -46,6 +46,57 @@ export async function loginAction(formData: FormData) {
 }
 
 /**
+ * NUEVA: Lógica para solicitar el envío de mail de recuperación
+ */
+export async function solicitarRecuperacionAction(formData: FormData) {
+  const email = formData.get("email");
+
+  // Verificamos que el email no sea nulo antes de continuar
+  if (!email) {
+    return { error: "Por favor, ingresa un correo electrónico válido." };
+  }
+
+  //const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`;
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/login/forgot-password`;
+
+  // --- LOGS DE DEPURACIÓN EN TU TERMINAL ---
+  console.log("-----------------------------------------");
+  console.log("PROCESANDO ACCIÓN EN EL SERVIDOR (NEXT.JS)");
+  console.log("URL de destino:", url);
+  console.log("Payload (email):", email);
+  console.log("-----------------------------------------");
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.toString() }),
+    });
+
+    // Verificamos si el backend respondió con HTML (típico de un error 404 o puerto mal configurado)
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("text/html")) {
+      return { 
+        error: `Error del servidor (${res.status}). Revisa la terminal.` 
+      };
+    }
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { error: data.message || "Error al procesar la solicitud en el backend." };
+    }
+
+    return { success: data.message || "Enlace de recuperación enviado con éxito." };
+
+  } catch (error) {
+    console.error("ERROR DE CONEXIÓN:", error);
+    return { 
+      error: "No se pudo conectar con el backend. Asegúrate de que el servidor esté encendido en el puerto 8001." 
+    };
+  }
+}
+/**
  * Función para obtener los datos del usuario logueado
  */
 export async function getMisDatos() {

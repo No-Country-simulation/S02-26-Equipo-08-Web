@@ -21,15 +21,34 @@ import {
   Heart,
   Check,
   HeartHandshake,
+  FileCheck,
+  Upload,
+  FileText,
+  Image,
+  AlertCircle,
+  Clock,
 } from "lucide-react";
+import { obtenerTiposDocumento, subirDocumento, type TipoDocumento } from "@/src/actions/documentos";
 import { registroCuidadorSchema, type RegistroCuidadorForm } from "@/src/types/registro";
-import { registrarCuidadorAction } from "@/src/actions/registro";
+import { registrarCuidadorAction, type DisponibilidadDia } from "@/src/actions/registro";
 
 const PASOS = [
   { titulo: "Cuenta", descripcion: "Email y contraseña", icon: Mail },
   { titulo: "Datos Personales", descripcion: "Tu información básica", icon: User },
   { titulo: "Datos Bancarios", descripcion: "Opcional — podés completarlo después", icon: CreditCard },
+  { titulo: "Disponibilidad", descripcion: "Días y horarios de trabajo", icon: Clock },
+  { titulo: "Documentación", descripcion: "Opcional — podés subirla después", icon: FileCheck },
   { titulo: "Confirmación", descripcion: "Revisá y confirmá", icon: CheckCircle2 },
+];
+
+const DIAS_SEMANA = [
+  { num: 1, label: "Lun", full: "Lunes" },
+  { num: 2, label: "Mar", full: "Martes" },
+  { num: 3, label: "Mié", full: "Miércoles" },
+  { num: 4, label: "Jue", full: "Jueves" },
+  { num: 5, label: "Vie", full: "Viernes" },
+  { num: 6, label: "Sáb", full: "Sábado" },
+  { num: 7, label: "Dom", full: "Domingo" },
 ];
 
 export default function RegistroCuidadorPage() {
@@ -65,19 +84,29 @@ export default function RegistroCuidadorPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [tiposDoc, setTiposDoc] = useState<TipoDocumento[]>([]);
+  const [archivosSeleccionados, setArchivosSeleccionados] = useState<Record<number, File>>({});
+  const [docUploadStatus, setDocUploadStatus] = useState<Record<number, "idle" | "uploading" | "success" | "error">>({});
+  const [disponibilidades, setDisponibilidades] = useState<DisponibilidadDia[]>([]);
 
   // campos a validar en cada paso
   const camposPorPaso: (keyof RegistroCuidadorForm)[][] = [
     ["email", "password", "confirmarPassword"],
     ["nombre", "apellido", "identificacion", "telefono", "direccion", "edad"],
     ["cbu", "cvu", "alias"], // opcionales
+    [], // disponibilidad, no valida campos de form
+    [], // documentacion, no valida campos de form
     [], // confirmacion, no valida campos nuevos
   ];
 
   const avanzar = async () => {
     const campos = camposPorPaso[paso];
-    // el paso 2 (bancarios) es opcional, no validamos
-    if (paso === 2) {
+    // pasos opcionales: bancarios (2), disponibilidad (3), documentación (4)
+    if (paso === 2 || paso === 3 || paso === 4) {
+      // al entrar al paso de documentación, cargar tipos
+      if (paso === 3) {
+        obtenerTiposDocumento("cuidador").then(setTiposDoc);
+      }
       setPaso(paso + 1);
       return;
     }
@@ -86,6 +115,24 @@ export default function RegistroCuidadorPage() {
       setServerError(null);
       setPaso(paso + 1);
     }
+  };
+
+  const toggleDia = (dia: number) => {
+    const exists = disponibilidades.find((d) => d.dia_semana === dia);
+    if (exists) {
+      setDisponibilidades(disponibilidades.filter((d) => d.dia_semana !== dia));
+    } else {
+      setDisponibilidades([
+        ...disponibilidades,
+        { dia_semana: dia, hora_inicio: "08:00", hora_fin: "18:00" },
+      ].sort((a, b) => a.dia_semana - b.dia_semana));
+    }
+  };
+
+  const updateHoraDisponibilidad = (dia: number, campo: "hora_inicio" | "hora_fin", valor: string) => {
+    setDisponibilidades(
+      disponibilidades.map((d) => (d.dia_semana === dia ? { ...d, [campo]: valor } : d))
+    );
   };
 
   const retroceder = () => {
@@ -111,9 +158,21 @@ export default function RegistroCuidadorPage() {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmarPassword, ...datosRegistro } = data;
 
-      const result = await registrarCuidadorAction(datosRegistro);
+      const result = await registrarCuidadorAction({ ...datosRegistro, disponibilidades });
 
       if (result.success) {
+        // Subir documentos seleccionados usando el id del usuario recién creado
+        const idUsuario = result.data?.id;
+        if (idUsuario && Object.keys(archivosSeleccionados).length > 0) {
+          for (const [idTipoStr, archivo] of Object.entries(archivosSeleccionados)) {
+            const formData = new FormData();
+            formData.append("archivo", archivo);
+            formData.append("id_tipo_documento", idTipoStr);
+            formData.append("id_usuario", String(idUsuario));
+            formData.append("subido_por", String(idUsuario));
+            await subirDocumento(formData);
+          }
+        }
         setRegistroExitoso(true);
       } else {
         setServerError(result.message);
@@ -185,7 +244,7 @@ export default function RegistroCuidadorPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col lg:flex-row bg-white"
+      className="h-screen flex flex-col lg:flex-row bg-white overflow-hidden"
       style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}
     >
       {/* Panel izquierdo - Branding (solo desktop) */}
@@ -278,7 +337,7 @@ export default function RegistroCuidadorPage() {
       </div>
 
       {/* Panel derecho - Formulario */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         {/* Header mobile */}
         <header className="lg:hidden w-full border-b border-gray-100 bg-white">
           <div className="px-6 py-4 flex items-center justify-between">
@@ -524,8 +583,162 @@ export default function RegistroCuidadorPage() {
                     </div>
                   )}
 
-                  {/* PASO 3: Confirmación */}
+                  {/* PASO 3: Disponibilidad */}
                   {paso === 3 && (
+                    <div className="space-y-5">
+                      <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4 text-blue-700" style={{ fontSize: "0.82rem", lineHeight: 1.6 }}>
+                        Indicá los días y horarios en los que estás disponible para trabajar. Podés modificarlo después desde tu perfil.
+                      </div>
+
+                      {/* Selector de días */}
+                      <div>
+                        <p className={labelStyle}>Días disponibles</p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {DIAS_SEMANA.map((dia) => {
+                            const seleccionado = disponibilidades.some((d) => d.dia_semana === dia.num);
+                            return (
+                              <button
+                                key={dia.num}
+                                type="button"
+                                onClick={() => toggleDia(dia.num)}
+                                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
+                                  seleccionado
+                                    ? "bg-blue-500 text-white border-blue-500 shadow-sm shadow-blue-200"
+                                    : "bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-500"
+                                }`}
+                              >
+                                {dia.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Franjas horarias por día */}
+                      {disponibilidades.length > 0 && (
+                        <div className="space-y-3">
+                          <p className={labelStyle}>Franjas horarias</p>
+                          {disponibilidades.map((disp) => {
+                            const diaInfo = DIAS_SEMANA.find((d) => d.num === disp.dia_semana)!;
+                            return (
+                              <div
+                                key={disp.dia_semana}
+                                className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/60"
+                              >
+                                <span className="w-24 text-sm font-medium text-gray-700 shrink-0">
+                                  {diaInfo.full}
+                                </span>
+                                <div className="flex items-center gap-2 flex-1">
+                                  <input
+                                    type="time"
+                                    value={disp.hora_inicio}
+                                    onChange={(e) => updateHoraDisponibilidad(disp.dia_semana, "hora_inicio", e.target.value)}
+                                    className="flex-1 py-2 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 bg-white"
+                                  />
+                                  <span className="text-gray-400 text-sm shrink-0">a</span>
+                                  <input
+                                    type="time"
+                                    value={disp.hora_fin}
+                                    onChange={(e) => updateHoraDisponibilidad(disp.dia_semana, "hora_fin", e.target.value)}
+                                    className="flex-1 py-2 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 bg-white"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {disponibilidades.length === 0 && (
+                        <p className="text-sm text-gray-400 text-center py-4">
+                          Seleccioná al menos un día para configurar tu horario.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* PASO 4: Documentación (opcional) */}
+                  {paso === 4 && (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4 text-blue-700" style={{ fontSize: "0.82rem", lineHeight: 1.6 }}>
+                        Seleccioná los archivos que quieras subir ahora. Si preferís, podés hacerlo después desde <span className="font-semibold">&quot;Mi Documentación&quot;</span> en tu panel.
+                      </div>
+
+                      {tiposDoc.map((tipo) => {
+                        const archivo = archivosSeleccionados[tipo.id];
+                        const uploadStatus = docUploadStatus[tipo.id] || "idle";
+                        return (
+                          <div key={tipo.id} className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-3 bg-gray-50/80 border-b border-gray-100">
+                              <span className="font-medium text-sm text-gray-800 truncate">{tipo.descripcion}</span>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                tipo.obligatorio ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                              }`}>
+                                {tipo.obligatorio ? "Obligatorio" : "Opcional"}
+                              </span>
+                            </div>
+                            <div className="p-4">
+                              {archivo ? (
+                                <div className={`flex items-center gap-3 p-3 rounded-lg border ${
+                                  uploadStatus === "success" ? "bg-green-50 border-green-100" : "bg-blue-50 border-blue-100"
+                                }`}>
+                                  {uploadStatus === "success" ? (
+                                    <CheckCircle2 size={18} className="text-green-600 shrink-0" />
+                                  ) : archivo.name.endsWith(".pdf") ? (
+                                    <FileText size={18} className="text-red-500 shrink-0" />
+                                  ) : (
+                                    <Image size={18} className="text-blue-500 shrink-0" />
+                                  )}
+                                  <span className="text-sm text-gray-700 truncate flex-1">{archivo.name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nuevos = { ...archivosSeleccionados };
+                                      delete nuevos[tipo.id];
+                                      setArchivosSeleccionados(nuevos);
+                                      const nuevoStatus = { ...docUploadStatus };
+                                      delete nuevoStatus[tipo.id];
+                                      setDocUploadStatus(nuevoStatus);
+                                    }}
+                                    className="text-xs text-red-500 hover:text-red-700 font-medium"
+                                  >
+                                    Quitar
+                                  </button>
+                                </div>
+                              ) : (
+                                <label className="flex flex-col items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-all">
+                                  <Upload size={20} className="text-gray-400" />
+                                  <span className="text-sm text-gray-500">
+                                    <span className="text-blue-600 font-medium">Seleccioná</span> un archivo
+                                  </span>
+                                  <span className="text-[11px] text-gray-400">PDF, JPG, PNG o WebP · Máx 5MB</span>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        if (file.size > 5 * 1024 * 1024) {
+                                          alert("El archivo supera los 5MB.");
+                                          return;
+                                        }
+                                        setArchivosSeleccionados({ ...archivosSeleccionados, [tipo.id]: file });
+                                      }
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* PASO 5: Confirmación */}
+                  {paso === 5 && (
                     <div className="space-y-5">
                       <div className="bg-gray-50 rounded-xl p-5 space-y-3" style={{ fontSize: "0.85rem" }}>
                         <h3 className="font-semibold text-gray-900 text-sm">Resumen de tu registro</h3>
@@ -546,6 +759,24 @@ export default function RegistroCuidadorPage() {
                             <>
                               <span className="text-gray-400">Alias bancario</span>
                               <span className="font-medium text-gray-700">{valores.alias}</span>
+                            </>
+                          )}
+                          {disponibilidades.length > 0 && (
+                            <>
+                              <span className="text-gray-400">Disponibilidad</span>
+                              <span className="font-medium text-gray-700">
+                                {disponibilidades
+                                  .map((d) => DIAS_SEMANA.find((x) => x.num === d.dia_semana)?.label)
+                                  .join(", ")}
+                              </span>
+                            </>
+                          )}
+                          {Object.keys(archivosSeleccionados).length > 0 && (
+                            <>
+                              <span className="text-gray-400">Documentos</span>
+                              <span className="font-medium text-gray-700">
+                                {Object.keys(archivosSeleccionados).length} archivo(s) seleccionado(s)
+                              </span>
                             </>
                           )}
                         </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import {
     ArrowLeft,
     Mail,
@@ -10,18 +11,23 @@ import {
     FileCheck,
     Users,
     UserX,
-    Settings,
+    UserCheck,
     Clock,
     AlertTriangle,
+    ExternalLink,
+    Loader2,
+    FileText,
+    Image,
 } from "lucide-react";
 import type { UsuarioDetalle, DatosCuidador, DatosFamiliar } from "@/src/types/usuario";
+import { listarDocumentosUsuario, listarDocumentosPaciente, type Documento } from "@/src/actions/documentos";
 
-// mapeo de estados a etiquetas y colores (consistente con el listado)
+// mapeo de estados a etiquetas y colores (keys = descripcion exacta de tabla usuario_estado)
 const ESTADOS: Record<string, { label: string; color: string }> = {
-    A: { label: "Activo", color: "bg-emerald-100 text-emerald-700" },
-    PA: { label: "Pendiente", color: "bg-amber-100 text-amber-700" },
-    D: { label: "Deshabilitado", color: "bg-red-100 text-red-700" },
-    R: { label: "Rechazado", color: "bg-slate-100 text-slate-600" },
+    "Activo": { label: "Activo", color: "bg-emerald-100 text-emerald-700" },
+    "Pendiente de Aceptar": { label: "Pendiente", color: "bg-amber-100 text-amber-700" },
+    "Desactivado": { label: "Desactivado", color: "bg-slate-100 text-slate-600" },
+    "Rechazado": { label: "Rechazado", color: "bg-red-100 text-red-700" },
 };
 
 const ROLES: Record<number, { label: string; color: string }> = {
@@ -33,9 +39,7 @@ const ROLES: Record<number, { label: string; color: string }> = {
 interface UsuarioDetalleProps {
     usuario: UsuarioDetalle;
     onBack?: () => void;
-    // callbacks para acciones futuras (deshabilitar, gestionar, etc.)
-    onDeshabilitar?: (id: number) => void;
-    onGestionar?: (id: number) => void;
+    onCambiarEstado?: (id: number, nuevoEstado: number, accion: string) => void;
 }
 
 function formatFecha(fecha: string | null): string {
@@ -141,12 +145,155 @@ function SeccionFamiliar({ datos }: { datos: DatosFamiliar[] }) {
     );
 }
 
-export default function UsuarioDetalleComponent({ usuario, onBack, onDeshabilitar, onGestionar }: UsuarioDetalleProps) {
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ?? "";
+
+// seccion de documentos (read-only)
+function SeccionDocumentos({ titulo, docs, loading }: { titulo: string; docs: Documento[]; loading: boolean }) {
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-brand-primary mb-4 flex items-center gap-2">
+                <FileText size={20} className="text-slate-400" />
+                {titulo}
+            </h3>
+
+            {loading ? (
+                <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
+                    <Loader2 size={16} className="animate-spin" />
+                    Cargando documentos…
+                </div>
+            ) : docs.length === 0 ? (
+                <p className="text-slate-400 text-sm py-2">No hay documentos cargados.</p>
+            ) : (
+                <div className="divide-y divide-slate-100">
+                    {docs.map((doc) => {
+                        const esPdf = doc.mime_type?.includes("pdf") || doc.nombre_archivo?.endsWith(".pdf");
+                        const urlDoc = `${BASE_URL}/${doc.ruta_archivo}`;
+                        const fechaFormateada = doc.fecha_subida
+                            ? new Date(doc.fecha_subida).toLocaleDateString("es-AR", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                              })
+                            : "—";
+
+                        return (
+                            <div key={doc.id} className="flex items-center gap-4 py-3">
+                                <div className={`p-2 rounded-lg shrink-0 ${esPdf ? "bg-red-50" : "bg-blue-50"}`}>
+                                    {esPdf ? (
+                                        <FileText size={16} className="text-red-500" />
+                                    ) : (
+                                        <Image size={16} className="text-blue-500" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-brand-primary truncate">
+                                        {doc.tipo_documento?.descripcion ?? "Documento"}
+                                    </p>
+                                    <p className="text-xs text-slate-400 truncate">{doc.nombre_archivo}</p>
+                                </div>
+                                <span className="text-xs text-slate-400 shrink-0 hidden sm:block">{fechaFormateada}</span>
+                                <a
+                                    href={urlDoc}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 shrink-0 transition-colors"
+                                >
+                                    Ver <ExternalLink size={12} />
+                                </a>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// botones de accion contextuales segun el estado del usuario
+function BotonesAccion({ usuario, onCambiarEstado }: { usuario: UsuarioDetalle; onCambiarEstado?: (id: number, nuevoEstado: number, accion: string) => void }) {
+    if (!onCambiarEstado) return null;
+
+    const { estado } = usuario;
+
+    if (estado === "Pendiente de Aceptar") {
+        return (
+            <>
+                <button
+                    onClick={() => onCambiarEstado(usuario.id, 2, "Aceptar")}
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors cursor-pointer"
+                >
+                    <UserCheck size={16} />
+                    Aceptar
+                </button>
+                <button
+                    onClick={() => onCambiarEstado(usuario.id, 3, "Rechazar")}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+                >
+                    <UserX size={16} />
+                    Rechazar
+                </button>
+            </>
+        );
+    }
+
+    if (estado === "Activo") {
+        return (
+            <button
+                onClick={() => onCambiarEstado(usuario.id, 4, "Desactivar")}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors cursor-pointer"
+            >
+                <UserX size={16} />
+                Desactivar
+            </button>
+        );
+    }
+
+    if (estado === "Rechazado" || estado === "Desactivado") {
+        return (
+            <button
+                onClick={() => onCambiarEstado(usuario.id, 2, "Activar")}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors cursor-pointer"
+            >
+                <UserCheck size={16} />
+                Activar
+            </button>
+        );
+    }
+
+    return null;
+}
+
+export default function UsuarioDetalleComponent({ usuario, onBack, onCambiarEstado }: UsuarioDetalleProps) {
     const estadoInfo = ESTADOS[usuario.estado] || { label: usuario.estado, color: "bg-gray-100 text-gray-600" };
     const rolInfo = ROLES[usuario.id_rol] || { label: "Sin rol", color: "bg-gray-100 text-gray-600" };
     const nombreCompleto = usuario.nombre && usuario.apellido
         ? `${usuario.nombre} ${usuario.apellido}`
         : "Sin datos personales";
+
+    const [docsUsuario, setDocsUsuario] = useState<Documento[]>([]);
+    const [docsPacientes, setDocsPacientes] = useState<Record<number, Documento[]>>({});
+    const [docsLoading, setDocsLoading] = useState(true);
+
+    useEffect(() => {
+        const cargar = async () => {
+            const docs = await listarDocumentosUsuario(usuario.id);
+            setDocsUsuario(docs);
+
+            if (usuario.id_rol === 3 && Array.isArray(usuario.datosRol)) {
+                const ids = [...new Set(
+                    (usuario.datosRol as DatosFamiliar[])
+                        .map((f) => f.id_paciente)
+                        .filter(Boolean)
+                )];
+                const entradas = await Promise.all(
+                    ids.map(async (id) => [id, await listarDocumentosPaciente(id)] as [number, Documento[]])
+                );
+                setDocsPacientes(Object.fromEntries(entradas));
+            }
+            setDocsLoading(false);
+        };
+        cargar();
+    }, [usuario.id, usuario.id_rol, usuario.datosRol]);
 
     return (
         <div className="space-y-6">
@@ -162,26 +309,9 @@ export default function UsuarioDetalleComponent({ usuario, onBack, onDeshabilita
                     </button>
                 )}
 
-                {/* Acciones rapidas (preparadas para futuras tareas) */}
+                {/* Acciones contextuales segun estado */}
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => onGestionar?.(usuario.id)}
-                        disabled={!onGestionar}
-                        title="Gestionar usuario"
-                        className="flex items-center gap-2 px-4 py-2 bg-brand-accent text-white rounded-lg text-sm font-medium hover:bg-brand-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        <Settings size={16} />
-                        Gestionar
-                    </button>
-                    <button
-                        onClick={() => onDeshabilitar?.(usuario.id)}
-                        disabled={!onDeshabilitar}
-                        title="Deshabilitar usuario"
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        <UserX size={16} />
-                        Deshabilitar
-                    </button>
+                    <BotonesAccion usuario={usuario} onCambiarEstado={onCambiarEstado} />
                 </div>
             </div>
 
@@ -251,6 +381,29 @@ export default function UsuarioDetalleComponent({ usuario, onBack, onDeshabilita
             {usuario.id_rol === 3 && usuario.datosRol && Array.isArray(usuario.datosRol) && (
                 <SeccionFamiliar datos={usuario.datosRol as DatosFamiliar[]} />
             )}
+
+            {/* Documentación personal del usuario (cuidador o familiar) */}
+            {(usuario.id_rol === 2 || usuario.id_rol === 3) && (
+                <SeccionDocumentos
+                    titulo="Documentación personal"
+                    docs={docsUsuario}
+                    loading={docsLoading}
+                />
+            )}
+
+            {/* Documentación de pacientes (solo familiares) */}
+            {usuario.id_rol === 3 && Array.isArray(usuario.datosRol) &&
+                (usuario.datosRol as DatosFamiliar[])
+                    .filter((f, i, arr) => arr.findIndex((x) => x.id_paciente === f.id_paciente) === i)
+                    .map((f) => (
+                        <SeccionDocumentos
+                            key={f.id_paciente}
+                            titulo={`Documentación — ${f.nombre_paciente ?? ""} ${f.apellido_paciente ?? ""}`.trim()}
+                            docs={docsPacientes[f.id_paciente] ?? []}
+                            loading={docsLoading}
+                        />
+                    ))
+            }
         </div>
     );
 }

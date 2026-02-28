@@ -43,6 +43,30 @@ export async function listarUsuarios(params: ListarUsuariosParams = {}): Promise
     }
 }
 
+// cambiar el estado de un usuario (Pendiente/Activo/Rechazado/Desactivado)
+export async function cambiarEstadoUsuarioAction(
+    id: number,
+    nuevoEstado: number,
+    idAdmin: number
+): Promise<{ success: boolean; message: string }> {
+    try {
+        const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/usuarios/cambiarEstado/${id}`,
+            {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id_admin: idAdmin, nuevo_estado: nuevoEstado }),
+            }
+        );
+
+        const data = await res.json();
+        return { success: data.success, message: data.message };
+    } catch (error) {
+        console.error("cambiarEstadoUsuarioAction error:", error);
+        return { success: false, message: "Error al conectar con el servidor." };
+    }
+}
+
 // obtener detalle completo de un usuario por su id
 export async function obtenerUsuario(id: number): Promise<UsuarioDetalleResponse> {
     try {

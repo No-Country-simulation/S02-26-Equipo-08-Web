@@ -174,3 +174,35 @@ model log_auditoria {
   valor_nuevo    Json?
   ip_direccion   String?   @db.VarChar(45)
 }
+
+model disponibilidad_cuidador {
+  id          Int      @id @default(autoincrement())
+  id_cuidador Int
+  dia_semana  Int      @db.SmallInt  // 1=Lunes, 2=Martes, 3=Miercoles, 4=Jueves, 5=Viernes, 6=Sabado, 7=Domingo
+  hora_inicio DateTime @db.Time(6)
+  hora_fin    DateTime @db.Time(6)
+
+  @@unique([id_cuidador, dia_semana])
+  @@index([id_cuidador])
+}
+
+model tipo_documento {
+  id          Int     @id @default(autoincrement())
+  descripcion String  @db.VarChar(100)
+  aplica_a    String  @db.VarChar(20)
+  obligatorio Boolean @default(false)
+}
+
+model documento {
+  id                Int      @id @default(autoincrement())
+  id_tipo_documento Int
+  id_usuario        Int?
+  id_paciente       Int?
+  subido_por        Int
+  nombre_archivo    String   @db.VarChar(255)
+  nombre_guardado   String   @db.VarChar(255)
+  ruta_archivo      String   @db.VarChar(500)
+  mime_type         String?  @db.VarChar(100)
+  tamanio_bytes     Int?
+  fecha_subida      DateTime @default(now()) @db.Timestamp(6)
+}

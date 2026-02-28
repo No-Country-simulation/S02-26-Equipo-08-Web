@@ -9,6 +9,7 @@ const { insertarTareas } = require("./pre_carga/tarea/ins");
 const { insertarAsignaciones } = require("./pre_carga/asignacion_servicio/ins");
 const { insertarGuardias } = require("./pre_carga/guardia/ins");
 const { insertarPagos } = require("./pre_carga/pagos/ins");
+const { insertarTiposDocumento } = require("./pre_carga/tipo_documento/ins");
 
 const preCargarRoles = async () =>{
 
@@ -25,7 +26,7 @@ const preCargarRoles = async () =>{
     ]
 
         for await (const rol of roles) {
-        const rol_ins = prisma.rol.create({
+        const rol_ins = await prisma.rol.create({
             data: {
                 id: rol.id,
                 descripcion: rol.descripcion
@@ -175,6 +176,7 @@ const insertarDatosPreCargados = async () => {
     preCargarEstadosGuardia()
     preCargarEstadosUsuario()
     preCargarEstadosPaciente()
+    insertarTiposDocumento()
     insertarUsuarios()
     insertarPersonas()
     insertarCuidadores()
