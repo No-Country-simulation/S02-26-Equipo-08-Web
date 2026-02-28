@@ -22,8 +22,10 @@ export async function loginAction(formData: FormData) {
     const data = await res.json();
 
     if (!res.ok) {
-      // Si el backend (8001) rechaza los datos, devolvemos el mensaje de error
-      return { error: data.message || "Credenciales incorrectas" };
+      return {
+        error: data.message || "Credenciales incorrectas",
+        errorCode: data.errorCode || null,
+      };
     }
 
     // Si el login es exitoso, guardamos el token en una cookie segura

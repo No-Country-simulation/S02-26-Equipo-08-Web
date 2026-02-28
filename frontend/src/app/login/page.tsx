@@ -5,9 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { loginAction } from '@/src/actions/auth';
 
-
-
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Heart } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Heart, ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 const loginSchema = z.object({
@@ -20,6 +18,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPymePage() {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [bloqueado, setBloqueado] = useState<string | null>(null);
 
   const {
     register,
@@ -31,16 +30,55 @@ export default function LoginPymePage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setServerError(null);
+    setBloqueado(null);
     const formData = new FormData();
     formData.set('email', data.email);
     formData.set('password', data.password);
 
     const result = await loginAction(formData);
     if (result?.error) {
-      setServerError(result.error);
+      if (result.errorCode === "USUARIO_NO_HABILITADO") {
+        setBloqueado(result.error);
+      } else {
+        setServerError(result.error);
+      }
     }
     // Si no hay error, loginAction hace redirect() al dashboard automáticamente
   };
+
+  // Pantalla de usuario no habilitado
+  if (bloqueado) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="bg-white p-10 rounded-3xl shadow-xl border border-red-100 text-center max-w-lg w-full">
+          <div className="bg-red-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <ShieldAlert size={48} className="text-red-500" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Usuario no habilitado
+          </h2>
+          <p className="text-slate-600 text-lg leading-relaxed mb-6">
+            {bloqueado}
+          </p>
+          <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 mb-6">
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-1">
+              Acción requerida
+            </p>
+            <p className="text-gray-900 font-bold text-lg">
+              Por favor comuníquese con el administrador para habilitar su usuario.
+            </p>
+          </div>
+          <button
+            onClick={() => setBloqueado(null)}
+            className="flex items-center gap-2 mx-auto text-sm text-slate-500 hover:text-gray-700 transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={15} />
+            Volver al inicio de sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white" style={{ fontFamily: "var(--font-inter), 'Inter', sans-serif" }}>
