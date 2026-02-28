@@ -48,6 +48,25 @@ const familiares = [
         id_paciente: 4,
         id_parentesco: 5,
     },
+    // --- familiares activos extra (para testing de asignaciones) ---
+    // id_usuario 14: Carolina Vega (madre de paciente 5 - Mateo Vega)
+    // id_usuario 15: Andres Molina (padre de paciente 6 - Elena Molina)
+    // id_usuario 16: Daniela Castro (tutora de paciente 7 - Franco Castro)
+    {
+        id_usuario: 14,
+        id_paciente: 5,
+        id_parentesco: 1,
+    },
+    {
+        id_usuario: 15,
+        id_paciente: 6,
+        id_parentesco: 2,
+    },
+    {
+        id_usuario: 16,
+        id_paciente: 7,
+        id_parentesco: 6,
+    },
 ]
 
 module.exports = { familiares }

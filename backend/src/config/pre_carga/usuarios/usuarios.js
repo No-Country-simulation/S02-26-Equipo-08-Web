@@ -158,6 +158,43 @@ const usuarios = [
         pass: '123456',
         id_usuario_estado: 3, // Rechazado
     },
+    // --- familiares activos extra (para testing de asignaciones) ---
+    {
+        nombre: 'Carolina',
+        apellido: 'Vega',
+        dni: '38901234',
+        email: 'familiar7@gmail.com',
+        direccion: 'Av. Corrientes 3400, CABA',
+        telefono: '1155012012',
+        edad: 35,
+        id_rol: 3,
+        pass: '123456',
+        id_usuario_estado: 2, // Activo
+    },
+    {
+        nombre: 'Andres',
+        apellido: 'Molina',
+        dni: '32109876',
+        email: 'familiar8@gmail.com',
+        direccion: 'Mitre 780, Mar del Plata',
+        telefono: '1155013013',
+        edad: 41,
+        id_rol: 3,
+        pass: '123456',
+        id_usuario_estado: 2, // Activo
+    },
+    {
+        nombre: 'Daniela',
+        apellido: 'Castro',
+        dni: '39012345',
+        email: 'familiar9@gmail.com',
+        direccion: 'Belgrano 500, San Juan',
+        telefono: '1155014014',
+        edad: 29,
+        id_rol: 3,
+        pass: '123456',
+        id_usuario_estado: 2, // Activo
+    },
 ]
 
 module.exports = {usuarios}

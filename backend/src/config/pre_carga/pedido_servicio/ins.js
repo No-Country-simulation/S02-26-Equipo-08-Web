@@ -8,9 +8,9 @@ async function insertarPedidosServicios() {
         return
     }
 
-    pedidos_servicios.forEach(pedido => {
-        insertarPedidoServicio(pedido)
-    });
+    for (const pedido of pedidos_servicios) {
+        await insertarPedidoServicio(pedido)
+    }
 }
 
 async function insertarPedidoServicio(pedido) {

@@ -211,7 +211,10 @@ export interface Tarea {
 export async function listarCuidadoresActivos(idPedido?: number): Promise<CuidadorActivo[]> {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-  if (!token) return [];
+  if (!token) {
+    console.error("[listarCuidadoresActivos] Sin token en cookies");
+    return [];
+  }
   try {
     const url = idPedido
       ? `${API_URL}/cuidadores/activos?id_pedido=${idPedido}`
@@ -221,10 +224,15 @@ export async function listarCuidadoresActivos(idPedido?: number): Promise<Cuidad
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      const errorBody = await res.text();
+      console.error(`[listarCuidadoresActivos] HTTP ${res.status} para ${url} — respuesta: ${errorBody}`);
+      return [];
+    }
     const json = await res.json();
     return json.data ?? [];
-  } catch {
+  } catch (err) {
+    console.error("[listarCuidadoresActivos] Error de red:", err);
     return [];
   }
 }

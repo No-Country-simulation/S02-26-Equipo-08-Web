@@ -154,6 +154,7 @@ const listarCuidadoresActivos = async (req, res, next) => {
         return res.status(200).json({ success: true, data: cuidadores, message: "OK" });
     } catch (error) {
         console.error("listarCuidadoresActivos error:", error.message);
+        console.error("listarCuidadoresActivos stack:", error.stack);
         next(error);
     }
 };

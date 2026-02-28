@@ -8,9 +8,9 @@ async function insertarPersonas() {
         return
     }
 
-    personas.forEach(persona => {
-        insertarPersona(persona)
-    });
+    for (const persona of personas) {
+        await insertarPersona(persona)
+    }
 }
 
 async function insertarPersona(persona) {

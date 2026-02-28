@@ -9,9 +9,9 @@ async function insertarFamiliares() {
         return
     }
 
-    familiares.forEach(familiar => {
-        insertarFamiliar(familiar)
-    });
+    for (const familiar of familiares) {
+        await insertarFamiliar(familiar)
+    }
 }
 
 async function insertarFamiliar(familiar) {

@@ -9,9 +9,9 @@ const insertarUsuarios = async () => {
         return
     }
 
-    usuarios.forEach(usuario => {
-        insertarUsuario(usuario)
-    });
+    for (const usuario of usuarios) {
+        await insertarUsuario(usuario)
+    }
 
 }
 

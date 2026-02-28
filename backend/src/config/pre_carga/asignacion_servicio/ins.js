@@ -8,9 +8,9 @@ async function insertarAsignaciones() {
         return
     }
 
-    asignaciones.forEach(asignacion => {
-        insertarAsignacion(asignacion)
-    });
+    for (const asignacion of asignaciones) {
+        await insertarAsignacion(asignacion)
+    }
 }
 
 async function insertarAsignacion(asignacion) {

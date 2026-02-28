@@ -127,6 +127,34 @@ const personas = [
         telefono: '1155011011',
         edad: 60,
     },
+    // --- familiares activos extra (para testing de asignaciones) ---
+    {
+        id_usuario: 14,
+        apellido: 'Vega',
+        nombre: 'Carolina',
+        identificacion: '38901234',
+        direccion: 'Av. Corrientes 3400, CABA',
+        telefono: '1155012012',
+        edad: 35,
+    },
+    {
+        id_usuario: 15,
+        apellido: 'Molina',
+        nombre: 'Andres',
+        identificacion: '32109876',
+        direccion: 'Mitre 780, Mar del Plata',
+        telefono: '1155013013',
+        edad: 41,
+    },
+    {
+        id_usuario: 16,
+        apellido: 'Castro',
+        nombre: 'Daniela',
+        identificacion: '39012345',
+        direccion: 'Belgrano 500, San Juan',
+        telefono: '1155014014',
+        edad: 29,
+    },
 ]
 
 module.exports = { personas }

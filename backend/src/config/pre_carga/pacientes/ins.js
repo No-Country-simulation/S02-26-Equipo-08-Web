@@ -8,9 +8,9 @@ async function insertarPacientes() {
         return
     }
 
-    pacientes.forEach(paciente => {
-        insertarPaciente(paciente)
-    });
+    for (const paciente of pacientes) {
+        await insertarPaciente(paciente)
+    }
 }
 
 async function insertarPaciente(paciente) {

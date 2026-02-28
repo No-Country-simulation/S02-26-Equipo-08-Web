@@ -8,9 +8,9 @@ async function insertarTareas() {
         return
     }
 
-    tareas.forEach(tarea => {
-        insertarTarea(tarea)
-    });
+    for (const tarea of tareas) {
+        await insertarTarea(tarea)
+    }
 }
 
 async function insertarTarea(tarea) {
