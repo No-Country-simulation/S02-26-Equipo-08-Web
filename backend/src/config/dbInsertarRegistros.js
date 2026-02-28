@@ -10,6 +10,7 @@ const { insertarAsignaciones } = require("./pre_carga/asignacion_servicio/ins");
 const { insertarGuardias } = require("./pre_carga/guardia/ins");
 const { insertarPagos } = require("./pre_carga/pagos/ins");
 const { insertarTiposDocumento } = require("./pre_carga/tipo_documento/ins");
+const { insertarDisponibilidades } = require("./pre_carga/disponibilidad/ins");
 
 const preCargarRoles = async () =>{
 
@@ -187,6 +188,7 @@ const insertarDatosPreCargados = async () => {
     await insertarAsignaciones()
     await insertarGuardias()
     await insertarPagos()
+    await insertarDisponibilidades()
 }
 
 module.exports = {insertarDatosPreCargados}

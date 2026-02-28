@@ -515,6 +515,17 @@ const asignarCuidador = async (req, res, next) => {
             const tarea = await tx.tarea.findUnique({ where: { id: parseInt(id_tarea) } });
             if (!tarea) throw new Error("TAREA_NO_ENCONTRADA");
 
+            // Verificar que el cuidador tenga disponibilidad declarada para ese día y rango horario
+            const disponibilidad = await tx.$queryRawUnsafe(`
+                SELECT COUNT(*)::int AS total
+                FROM disponibilidad_cuidador dc
+                WHERE dc.id_cuidador = $1
+                  AND dc.dia_semana = EXTRACT(ISODOW FROM $2::date)::int
+                  AND dc.hora_inicio::time <= $3::time
+                  AND dc.hora_fin::time >= ($3::time + ($4 * INTERVAL '1 hour'))
+            `, parseInt(id_cuidador), pedido.fecha_del_servicio, pedido.hora_inicio, pedido.cantidad_horas_solicitadas);
+            if (Number(disponibilidad[0]?.total) === 0) throw new Error("CUIDADOR_SIN_DISPONIBILIDAD_DECLARADA");
+
             // Verificar que el cuidador no tenga asignaciones superpuestas en el mismo rango horario
             const conflictos = await tx.$queryRawUnsafe(`
                 SELECT COUNT(*)::int AS total
@@ -563,6 +574,7 @@ const asignarCuidador = async (req, res, next) => {
             "PEDIDO_NO_PENDIENTE": "La solicitud no está en estado Pendiente y no puede ser asignada.",
             "CUIDADOR_NO_ENCONTRADO": "Cuidador no encontrado.",
             "TAREA_NO_ENCONTRADA": "Tarea no encontrada.",
+            "CUIDADOR_SIN_DISPONIBILIDAD_DECLARADA": "El acompañante no tiene disponibilidad declarada para ese día y horario.",
             "CUIDADOR_NO_DISPONIBLE": "El acompañante ya tiene una asignación en ese rango horario.",
         };
         const mensaje = errorMap[error.message];

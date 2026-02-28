@@ -100,17 +100,30 @@ const listarCuidadoresActivos = async (req, res, next) => {
                     p.identificacion,
                     p.telefono,
                     u.email,
-                    NOT EXISTS (
-                        SELECT 1
-                        FROM asignacion_servico a
-                        JOIN pedido_servicio ps2 ON ps2.id = a.id_pedido
-                        JOIN pedido_servicio ref ON ref.id = $1
-                        WHERE a.id_cuidador = c.id
-                          AND ps2.id != $1
-                          AND COALESCE(ps2.id_pedido_estado, 0) NOT IN (5, 6)
-                          AND ps2.fecha_del_servicio::date = ref.fecha_del_servicio::date
-                          AND ps2.hora_inicio::time < (ref.hora_inicio::time + (ref.cantidad_horas_solicitadas * INTERVAL '1 hour'))
-                          AND (ps2.hora_inicio::time + (ps2.cantidad_horas_solicitadas * INTERVAL '1 hour')) > ref.hora_inicio::time
+                    (
+                        -- Sin asignaciones superpuestas en ese rango horario
+                        NOT EXISTS (
+                            SELECT 1
+                            FROM asignacion_servico a
+                            JOIN pedido_servicio ps2 ON ps2.id = a.id_pedido
+                            JOIN pedido_servicio ref ON ref.id = $1
+                            WHERE a.id_cuidador = c.id
+                              AND ps2.id != $1
+                              AND COALESCE(ps2.id_pedido_estado, 0) NOT IN (5, 6)
+                              AND ps2.fecha_del_servicio::date = ref.fecha_del_servicio::date
+                              AND ps2.hora_inicio::time < (ref.hora_inicio::time + (ref.cantidad_horas_solicitadas * INTERVAL '1 hour'))
+                              AND (ps2.hora_inicio::time + (ps2.cantidad_horas_solicitadas * INTERVAL '1 hour')) > ref.hora_inicio::time
+                        )
+                        -- Y tiene disponibilidad declarada para ese día y horario
+                        AND EXISTS (
+                            SELECT 1
+                            FROM disponibilidad_cuidador dc
+                            JOIN pedido_servicio ref ON ref.id = $1
+                            WHERE dc.id_cuidador = c.id
+                              AND dc.dia_semana = EXTRACT(ISODOW FROM ref.fecha_del_servicio::date)::int
+                              AND dc.hora_inicio::time <= ref.hora_inicio::time
+                              AND dc.hora_fin::time >= (ref.hora_inicio::time + (ref.cantidad_horas_solicitadas * INTERVAL '1 hour'))
+                        )
                     ) AS disponible
                 FROM cuidador c
                 JOIN usuario u ON u.id = c.id_usuario
