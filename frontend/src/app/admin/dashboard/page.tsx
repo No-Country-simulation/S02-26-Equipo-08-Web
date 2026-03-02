@@ -118,15 +118,16 @@ export default async function PatientDashboard({ searchParams }: Props) {
             </p>
           </div>
         </div>
-
+        
+        
         <div className="flex gap-3">
-          {isAdmin && (
+          {false && isAdmin && (
             <button className="flex items-center gap-2 bg-brand-primary hover:opacity-90 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg cursor-pointer">
               <Plus size={20} className="text-brand-accent" />
               Nuevo Usuario
             </button>
           )}
-          {isFamiliar && (
+          {false && isFamiliar && (
             <button className="flex items-center gap-2 bg-brand-accent text-brand-primary hover:opacity-90 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg cursor-pointer">
               <Plus size={20} />
               Solicitar Servicio

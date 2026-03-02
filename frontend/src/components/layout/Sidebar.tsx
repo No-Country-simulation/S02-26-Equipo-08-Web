@@ -25,8 +25,8 @@ import { getMisDatos, logout } from '@/src/actions/auth';
 // Menú con propiedad 'roles' para filtrado — Rol 1: Admin, Rol 2: Cuidador, Rol 3: Familiar
 const menuItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, roles: [1, 2, 3] },
-  { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound, roles: [1] },
-  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users, roles: [1] },
+  { name: 'Pacientes (ABM)', href: '/admin/dashboard/pacientes', icon: UserRound, roles: [0] },
+  { name: 'Acompañantes', href: '/admin/dashboard/cuidadores', icon: Users, roles: [0] },
   { name: 'Usuarios', href: '/admin/dashboard/usuarios', icon: Settings, roles: [1] },
   { name: 'Solicitudes', href: '/admin/dashboard/solicitudes', icon: ClipboardList, roles: [1] },
   { name: 'Honorarios', href: '/admin/dashboard/honorarios', icon: DollarSign, roles: [1] },
