@@ -64,6 +64,8 @@ const getDashboardSummary = async (req, res) => {
     // --- 2. CUIDADOR ---
     } else if (role === 2) {
       const idUsuarioLogueado = Number(id); 
+      console.log("****console**************");
+      console.log(idUsuarioLogueado);
 
       const misGuardias = await prisma.$queryRawUnsafe(`
         SELECT ps.id, ps.fecha_del_servicio, ps.hora_inicio,
@@ -74,7 +76,7 @@ const getDashboardSummary = async (req, res) => {
         LEFT JOIN paciente pac ON asig.id_paciente = pac.id
         LEFT JOIN tarea t ON asig.id_tarea = t.id
         LEFT JOIN pedido_estado pe ON pe.id = ps.id_pedido_estado
-        WHERE asig.id_cuidador = $1 
+        WHERE asig.id_cuidador = (select id from cuidador WHERE id_usuario = $1)
           AND (LOWER(pac.nombre) LIKE $4 OR LOWER(pac.apellido) LIKE $4)
         ORDER BY ps.fecha_del_servicio DESC LIMIT $2 OFFSET $3
       `, idUsuarioLogueado, limit, offset, searchFilter);
@@ -91,10 +93,11 @@ const getDashboardSummary = async (req, res) => {
         paciente: { nombre: g.p_nom, apellido: g.p_ape }
       }));
 
+      
       const countResult = await prisma.$queryRawUnsafe(`
         SELECT COUNT(*) as total FROM asignacion_servico asig
         LEFT JOIN paciente pac ON asig.id_paciente = pac.id
-        WHERE asig.id_cuidador = $1 AND (LOWER(pac.nombre) LIKE $2 OR LOWER(pac.apellido) LIKE $2)
+        WHERE asig.id = $1 AND (LOWER(pac.nombre) LIKE $2 OR LOWER(pac.apellido) LIKE $2)
       `, idUsuarioLogueado, searchFilter);
 
       const total = Number(countResult[0].total);
