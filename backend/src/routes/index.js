@@ -2,7 +2,9 @@
 // aqui se importan y registran todas las rutas de la aplicacion
 // cuando crees un nuevo modulo (ej: pacientes, sesiones), agrega sus rutas aca
 
-const { Router } = require("express");
+const express = require("express");
+const router = express.Router();
+
 const productoRoutes = require("./producto.routes");
 const usuarioRoutes = require('./usuario.routes');
 const familiarRoutes = require('./familiar.routes');
@@ -16,7 +18,7 @@ const pedidoServicioRoutes = require('./pedidoServicio.routes');
 const dashboardRoutes = require('./dashboard.routes');
 const honorariosRoutes = require('./honorarios.routes');
 
-const router = Router();
+const guardiaRoutes = require("./guardia.routes");
 
 // montamos las rutas de productos bajo /productos
 // esto significa que todas las rutas de producto.routes.js
@@ -38,5 +40,8 @@ router.use('/honorarios', honorariosRoutes);
 // para agregar nuevas rutas, segui este patron:
 // const nuevaRuta = require("./nueva.routes");
 // router.use("/nueva-ruta", nuevaRuta);
+
+// rutas de guardias
+router.use("/guardias", guardiaRoutes);
 
 module.exports = router;
