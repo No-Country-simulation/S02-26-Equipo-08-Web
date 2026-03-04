@@ -22,10 +22,10 @@ const getDashboardSummary = async (req, res) => {
     // --- 1. ADMINISTRADOR ---
     if (role === 1) {
       const [countU, countP] = await Promise.all([
-        prisma.usuario.count(), 
+        prisma.usuario.count(),
         prisma.paciente.count()
       ]);
-      
+
       data.kpis = [
         { label: 'Total Usuarios', value: countU },
         { label: 'Pacientes Activos', value: countP }
@@ -52,11 +52,11 @@ const getDashboardSummary = async (req, res) => {
       }));
 
       const countResult = await prisma.$queryRawUnsafe(`
-        SELECT COUNT(*) as total FROM usuario u 
+        SELECT COUNT(*) as total FROM usuario u
         LEFT JOIN persona p ON p.id_usuario = u.id
         WHERE (LOWER(p.nombre) LIKE $1 OR LOWER(p.apellido) LIKE $1 OR LOWER(u.email) LIKE $1)
       `, searchFilter);
-      
+
       const count = Number(countResult[0].total);
       data.pagination.total = count;
       data.pagination.totalPages = Math.ceil(count / limit);
