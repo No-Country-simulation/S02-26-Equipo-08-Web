@@ -55,7 +55,7 @@ const solicitarServicio = async (req, res, next) => {
         if (fechaServicio < hoy) {
             return res.status(400).json({
                 success: false,
-                message: "La fecha del servicio no puede ser anterior a hoy.",
+                message: "La fecha del servicio no puede ser anterior o igual a hoy.",
                 errorCode: "INVALID_DATE_PAST",
             });
         }

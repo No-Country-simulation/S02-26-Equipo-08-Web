@@ -420,7 +420,7 @@ function SolicitudesFamiliarView() {
     cargarDatos();
   }, [cargarDatos]);
 
-  /*
+  
   const calcularHoras = (inicio: string, fin: string): number => {
     if (!inicio || !fin) return 0;
     const [hi, mi] = inicio.split(":").map(Number);
@@ -430,8 +430,9 @@ function SolicitudesFamiliarView() {
 
     return Math.max(0, Math.round(diff * 100) / 100);
   };
-  */
   
+  
+  /*
   const calcularHoras = (inicio: string, fin: string): number => {
   if (!inicio || !fin) return 0;
   
@@ -450,9 +451,37 @@ function SolicitudesFamiliarView() {
     const diff = diffMinutos / 60;
     return Math.round(diff * 100) / 100;
   };
-  
+  */
 
-  const hoyISO = new Date().toISOString().split("T")[0];
+ /* 
+const calcularHoras = (inicio: string, fin: string): string => {
+  if (!inicio || !fin) return "00:00";
+  
+  const [hi, mi] = inicio.split(":").map(Number);
+  const [hf, mf] = fin.split(":").map(Number);
+  
+  // 1. Calculamos la diferencia total en minutos
+  let diffMinutos = (hf * 60 + mf) - (hi * 60 + mi);
+  
+  // 2. Manejo de cruce de medianoche (ej. 23:00 a 03:00)
+  if (diffMinutos < 0) {
+    diffMinutos += 1440;
+  }
+  
+  // 3. Obtenemos las horas y los minutos por separado
+  const horas = Math.floor(diffMinutos / 60);
+  const minutos = diffMinutos % 60;
+  
+  // 4. Formateamos con ceros a la izquierda (PadStart) para que siempre sea HH:mm
+  const hh = String(horas).padStart(2, '0');
+  const mm = String(minutos).padStart(2, '0');
+  
+  return `${hh}:${mm}`; // Retornará "23:59" exactos
+};
+
+*/
+
+const hoyISO = new Date().toISOString().split("T")[0];
 
   const handleSubmit = async () => {
     if (!form.id_paciente) {
