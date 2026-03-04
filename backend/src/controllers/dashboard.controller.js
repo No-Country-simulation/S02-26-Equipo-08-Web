@@ -64,8 +64,6 @@ const getDashboardSummary = async (req, res) => {
     // --- 2. CUIDADOR ---
     } else if (role === 2) {
       const idUsuarioLogueado = Number(id); 
-      console.log("****console**************");
-      console.log(idUsuarioLogueado);
 
       const misGuardias = await prisma.$queryRawUnsafe(`
         SELECT ps.id, ps.fecha_del_servicio, ps.hora_inicio,

@@ -114,4 +114,23 @@ export const emailTemplates = {
     `)}
     <p style="${baseStyles.text}">Si crees que se trata de un error, comunicate con el equipo de soporte para resolver la situacion.</p>
   `),
+
+  // template de recuperación de contraseña - se envía al solicitar cambio de clave
+  recuperacion_clave: (params) => layout('Recuperar Contraseña', `
+    <p style="${baseStyles.text}">Hola <strong>${params.nombre}</strong>,</p>
+    <p style="${baseStyles.text}">Recibimos una solicitud para restablecer la contraseña de tu cuenta.</p>
+    <p style="${baseStyles.text}">Hacé clic en el siguiente botón para continuar con el proceso:</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${params.url_recuperacion}" 
+         style="background-color: #207bff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+        Restablecer Contraseña
+      </a>
+    </div>
+    ${infoBlock('#f59e0b', `
+      <p style="margin: 0; color: #333;"><strong>Importante:</strong> Este enlace expirará en 1 hora. Si no solicitaste este cambio, podés ignorar este correo de forma segura.</p>
+    `)}
+    <p style="${baseStyles.text}">Si tenés problemas con el botón, copiá y pegá este enlace en tu navegador:</p>
+    <p style="font-size: 12px; color: #207bff; word-break: break-all;">${params.url_recuperacion}</p>
+  `),
+
 };
