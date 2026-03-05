@@ -1,6 +1,7 @@
 const prisma = require("../config/database");
 const { registrarLog } = require('../utils/auditoria');
 const { asignacion_servicio, cancelacion_acompanamiento } = require('../utils/mailer');
+const { formatDate } = require('../utils/dates');
 
 // crear solicitud de acompañamiento (versión simple)
 const solicitarServicio = async (req, res, next) => {
@@ -631,7 +632,7 @@ const asignarCuidador = async (req, res, next) => {
         if (res.status(200))
         {
             await asignacion_servicio(datosUsuario.email,  datosPersona.nombre, datosPaciente.nombre
-                , datosPaciente.apellido, datosPaciente.direccion, datosPedidoServicio.fecha_del_servicio, 
+                , datosPaciente.apellido, datosPaciente.direccion, formatDate(datosPedidoServicio.fecha_del_servicio), 
                 datosPedidoServicio.hora_inicio, datosPedidoServicio.cantidad_horas_solicitadas, datosTarea.descripcion );
         }
         await registrarLog({
@@ -942,7 +943,7 @@ const cancelarServicio = async (req, res, next) => {
         if (res.status(200))
         {
             await cancelacion_acompanamiento(datosUsuario.email,  datosPersona.nombre, datosPaciente.nombre
-                , datosPaciente.apellido, datosPedidoServicio.fecha_del_servicio, motivo_cancelacion);
+                , datosPaciente.apellido, formatDate(datosPedidoServicio.fecha_del_servicio), motivo_cancelacion);
         }
 
         await registrarLog({
