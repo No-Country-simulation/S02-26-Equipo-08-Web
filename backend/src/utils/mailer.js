@@ -143,5 +143,37 @@ const rechazo_cuenta = async (email, nombre, motivo) => {
 };
 
 
+const asignacion_servicio = async (email, cuidadorNombre, pacienteNombre, pacienteApellido, pacienteDireccion, pedidoServicioFecha, pedidoServicioHoraInicio, pedidoServicioCantidadHoras, tareaDescripcion) => {
+  
+  
+  try {
+    const htmlContent = emailTemplates.asignacion_servicio({
+      nombre: cuidadorNombre,
+      paciente_nombre: pacienteNombre, 
+      paciente_apellido: pacienteApellido,
+      paciente_direccion: pacienteDireccion,
+      fecha_del_servicio: pedidoServicioFecha,
+      hora_inicio: pedidoServicioHoraInicio,
+      cantidad_horas: pedidoServicioCantidadHoras,
+      tarea_descripcion: tareaDescripcion
+    });
 
-module.exports = { enviarMailRecuperacion, deshabilitacion_cuenta, bienvenida, aceptacion_cuenta, rechazo_cuenta };
+    const mailOptions = {
+      from: `"PYMECare" <${process.env.MAIL_USER}>`,
+      to: email,
+      subject: "Asignación de serivico - PYMECare",
+      html: htmlContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("Correo enviado exitosamente a:", email);
+    return true;
+  } catch (error) {
+    console.error("Error al enviar el correo:", error);
+    throw new Error("No se pudo enviar el correo de asignación de servicio");
+  }
+};
+
+
+
+module.exports = { enviarMailRecuperacion, deshabilitacion_cuenta, bienvenida, aceptacion_cuenta, rechazo_cuenta, asignacion_servicio };

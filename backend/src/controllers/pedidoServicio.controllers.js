@@ -1,5 +1,6 @@
 const prisma = require("../config/database");
 const { registrarLog } = require('../utils/auditoria');
+const { asignacion_servicio } = require('../utils/mailer');
 
 // crear solicitud de acompañamiento (versión simple)
 const solicitarServicio = async (req, res, next) => {
@@ -492,7 +493,7 @@ const listarTareas = async (req, res, next) => {
     }
 };
 
-// asignar cuidador a una solicitud pendiente (solo admin)
+// asignar cuidador a una solicitud pendiente (solo admin) 
 const asignarCuidador = async (req, res, next) => {
     try {
         if (!req.user || Number(req.user.role) !== 1) {
@@ -561,6 +562,77 @@ const asignarCuidador = async (req, res, next) => {
             return asignacion;
         });
 
+        // busco datos para enviar email de asignacion de servicio al cuidador
+
+        const datosAsignacionServicio = await prisma.asignacion_servico.findFirst({
+            where: {id_pedido: parseInt(idPedido) },
+                select : {
+                    id_tarea : true,
+                    id_cuidador: true, 
+                    id_paciente: true,
+                    
+                }
+
+        });
+        
+        const datosPedidoServicio = await prisma.pedido_servicio.findFirst({
+            where: {id : parseInt(idPedido) }, 
+               select : {
+                   id_paciente: true, 
+                   fecha_del_servicio: true,
+                   hora_inicio: true, 
+                   cantidad_horas_solicitadas: true,
+                                                    
+                }
+
+        }); 
+
+        const datosCuidador = await prisma.cuidador.findFirst({
+            where: {id : parseInt(datosAsignacionServicio.id_cuidador) }, 
+               select : {
+                   id_usuario: true
+                                      
+                }
+
+        }); 
+
+         const datosUsuario = await prisma.usuario.findFirst({
+            where: {id : parseInt(parseInt(datosCuidador.id_usuario)) }, 
+               select : {
+                   email: true
+                                            
+                }
+
+        }); 
+
+        const datosPersona = await prisma.persona.findFirst({
+            where: {id_usuario : datosCuidador.id_usuario }
+
+        }); 
+
+
+        const datosPaciente = await prisma.paciente.findFirst({
+            where: {id : datosPedidoServicio.id_paciente }
+
+        }); 
+
+
+       
+
+        const datosTarea = await prisma.tarea.findFirst({
+            where: {id: id_tarea },
+                select : {
+                    descripcion: true 
+
+                }
+
+        });
+
+
+        await asignacion_servicio(datosUsuario.email,  datosPersona.nombre, datosPaciente.nombre
+            , datosPaciente.apellido, datosPaciente.direccion, datosPedidoServicio.fecha_del_servicio, 
+            datosPedidoServicio.hora_inicio, datosPedidoServicio.cantidad_horas_solicitadas, datosTarea.descripcion );
+
         await registrarLog({
             id_usuario: req.user.id,
             accion: 'ASIGNACION_CUIDADOR',
@@ -568,6 +640,8 @@ const asignarCuidador = async (req, res, next) => {
             detalles: { pedido_id: idPedido, cuidador_id: id_cuidador, tarea_id: id_tarea },
             req,
         });
+
+        // enviar mail de asignacion 
 
         return res.status(200).json({ success: true, data: resultado, message: "Cuidador asignado exitosamente." });
     } catch (error) {

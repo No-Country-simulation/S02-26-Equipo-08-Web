@@ -473,7 +473,7 @@ const cambiarEstadoUsuario = async (req, res, next) => {
         }
         else
         {
-            console.log(usuarioActual.id);
+            
             // busco datos de la persona
             datosPersona = await prisma.persona.findFirst({
                     where: { id_usuario: parseInt(id) }
