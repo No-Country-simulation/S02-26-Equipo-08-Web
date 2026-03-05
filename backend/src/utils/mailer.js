@@ -174,6 +174,34 @@ const asignacion_servicio = async (email, cuidadorNombre, pacienteNombre, pacien
   }
 };
 
+const cancelacion_acompanamiento = async (email, cuidadorNombre, pacienteNombre, pacienteApellido, pedidoServicioFecha, motivoCancelacion) => {
+  
+  
+  try {
+    const htmlContent = emailTemplates.cancelacion_acompanamiento({
+      nombre: cuidadorNombre,
+      paciente_nombre: pacienteNombre, 
+      paciente_apellido: pacienteApellido,
+      fecha: pedidoServicioFecha,
+      motivo: motivoCancelacion
+    });
+
+    const mailOptions = {
+      from: `"PYMECare" <${process.env.MAIL_USER}>`,
+      to: email,
+      subject: "Cancelación de serivico - PYMECare",
+      html: htmlContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("Correo enviado exitosamente a:", email);
+    return true;
+  } catch (error) {
+    console.error("Error al enviar el correo:", error);
+    throw new Error("No se pudo enviar el correo de cancelación de servicio");
+  }
+};
 
 
-module.exports = { enviarMailRecuperacion, deshabilitacion_cuenta, bienvenida, aceptacion_cuenta, rechazo_cuenta, asignacion_servicio };
+
+module.exports = { enviarMailRecuperacion, deshabilitacion_cuenta, bienvenida, aceptacion_cuenta, rechazo_cuenta, asignacion_servicio, cancelacion_acompanamiento };

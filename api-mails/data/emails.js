@@ -93,7 +93,7 @@ export const emailTemplates = {
   `),
 
   // template de cancelacion de acompanamiento - se envia cuando se cancela una guardia
-  cancelacion_acompanamiento: (params) => layout('Acompanamiento Cancelado', `
+  cancelacion_acompanamiento: (params) => layout('Acompañamiento Cancelado', `
     <p style="${baseStyles.text}">Hola, <strong>${params.nombre}</strong>.</p>
     <p style="${baseStyles.text}">Te informamos que el siguiente acompañamiento ha sido <strong style="color: #f59e0b;">cancelado</strong>.</p>
     ${infoBlock('#f59e0b', `
