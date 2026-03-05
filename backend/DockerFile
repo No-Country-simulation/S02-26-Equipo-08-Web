@@ -1,0 +1,11 @@
+FROM node:20-slim
+WORKDIR /app
+# Copiamos archivos de dependencias
+COPY package*.json ./
+RUN npm install
+# Copiamos el código del backend
+COPY . .
+# Generamos el cliente de Prisma para interactuar con Postgres
+RUN npx prisma generate
+EXPOSE 3000
+CMD ["node", "src/app.js"]

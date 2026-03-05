@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Base de Datos
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Backend
+  backend:
+    build: ./backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?schema=public
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - db
+
+  # Frontend (Next.js)
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "80:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://132.145.161.224/api # IP de tu OCI
+    depends_on:
+      - backend
+
+  # API Mails
+  mails:
+    build: ./api-mails
+    restart: always
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
