@@ -31,7 +31,7 @@ services:
     ports:
       - "80:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://132.145.161.224/api # IP de tu OCI
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
 
