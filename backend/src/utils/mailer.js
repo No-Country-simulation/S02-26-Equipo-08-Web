@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 // Corregimos la ruta: subimos un nivel (../) para entrar a data
-const { emailTemplates } = require('../../../api-mails/data/emails');
+const { emailTemplates } = require('../../../api-mails/data/emails.cjs');
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',

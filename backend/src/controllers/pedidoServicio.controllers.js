@@ -809,6 +809,10 @@ const finalizarServicio = async (req, res, next) => {
             return res.status(403).json({ success: false, message: "Acceso denegado." });
         }
 
+        // Calcular hora_finalizacion sumando cantidad_horas_solicitadas a hora_inicio
+        const horaInicio = new Date(pedido.hora_inicio);
+        const horaFin = new Date(horaInicio.getTime() + pedido.cantidad_horas_solicitadas * 3600 * 1000);
+
         await prisma.$transaction(async (tx) => {
             await tx.asignacion_servico.update({
                 where: { id: asignacion.id },
@@ -817,6 +821,21 @@ const finalizarServicio = async (req, res, next) => {
             await tx.pedido_servicio.update({
                 where: { id: idPedido },
                 data: { id_pedido_estado: 5, fecha_finalizado: new Date() },
+            });
+            // Crear guardia finalizada para que aparezca en honorarios
+            const hoy = new Date();
+            await tx.guardia.create({
+                data: {
+                    id_asignacion: asignacion.id,
+                    id_paciente: pedido.id_paciente,
+                    id_cuidador: asignacion.id_cuidador,
+                    id_pedido_servicio: idPedido,
+                    fecha_inicio: hoy,
+                    fecha_fin: hoy,
+                    hora_inicio: horaInicio,
+                    hora_finalizacion: horaFin,
+                    id_guardia_estado: 3,
+                },
             });
         });
 
