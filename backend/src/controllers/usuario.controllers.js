@@ -6,6 +6,7 @@ const {
     buscarPersonaIdentificacionDb, 
     buscarPersonaTelefonoDb 
 } = require('./persona.controllers');
+const { deshabilitacion_cuenta, aceptacion_cuenta, rechazo_cuenta } = require('../utils/mailer');
 
 // --- FUNCIONES DB ---
 
@@ -454,9 +455,13 @@ const cambiarEstadoUsuario = async (req, res, next) => {
     }
 
     try {
+
+        let datosPersona = null;
+
         const usuarioActual = await prisma.usuario.findUnique({
             where: { id: parseInt(id) },
             select: { id_usuario_estado: true, email: true }
+
         });
 
         if (!usuarioActual) {
@@ -466,15 +471,51 @@ const cambiarEstadoUsuario = async (req, res, next) => {
                 message: 'Usuario no encontrado.'
             });
         }
+        else
+        {
+            
+            // busco datos de la persona
+            datosPersona = await prisma.persona.findFirst({
+                    where: { id_usuario: parseInt(id) }
+            });
+        }
 
         const estadoAnterior = usuarioActual.id_usuario_estado;
-
+        
+         
         const usuarioActualizado = await prisma.usuario.update({
             where: { id: parseInt(id) },
             data: { id_usuario_estado: nuevoEstadoInt }
         });
+        
+
+        if (nuevoEstadoInt == 2)
+        {
+        // envio mail solo al aprobar la cuenta 
+            await aceptacion_cuenta(datosPersona.nombre, usuarioActual.email );
+        }
+
+        if (nuevoEstadoInt == 3)
+        {
+        // envio mail solo al aprobar la cuenta 
+            await rechazo_cuenta(usuarioActual.email, datosPersona.nombre,  "Rechazado por el administrador");
+            
+        }
+
+
+        if (nuevoEstadoInt == 4)
+        {
+        // envio mail solo al deshabilitar la cuenta 
+            await deshabilitacion_cuenta(usuarioActual.email, datosPersona.nombre,  "Deshabilitado por el administrador");
+        }
+        
 
         try {
+
+            
+            
+            
+
             await prisma.log_auditoria.create({
                 data: {
                     id_usuario: parseInt(id_admin) || 0,
@@ -483,6 +524,7 @@ const cambiarEstadoUsuario = async (req, res, next) => {
                     valor_anterior: { id_usuario_estado: estadoAnterior },
                     valor_nuevo: { id_usuario_estado: nuevoEstadoInt, id_objetivo: parseInt(id) },
                     ip_direccion: req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1'
+                    
                 }
             });
         } catch (auditError) {

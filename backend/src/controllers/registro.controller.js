@@ -11,7 +11,7 @@
 
 const prisma = require("../config/database");
 const bcrypt = require("bcrypt");
-
+const { bienvenida } = require('../utils/mailer');
 // POST /api/registro/cuidador
 // crea usuario (rol 2, estado PA, activo 0) + persona + cuidador + disponibilidades en una transaccion
 const registrarCuidador = async (req, res, next) => {
@@ -144,11 +144,19 @@ const registrarCuidador = async (req, res, next) => {
       return usuario;
     });
 
+      if (res.status(201))
+      {
+      // enviar correo de bienvenida
+        await bienvenida(nombre, email);
+      }
+
     return res.status(201).json({
       success: true,
       data: { id: resultado.id, email: resultado.email },
       message: "Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador.",
     });
+
+    
   } catch (error) {
     console.error("REGISTRAR CUIDADOR ERROR:", error);
 
@@ -262,6 +270,14 @@ const registrarFamiliar = async (req, res, next) => {
 
       return usuario;
     });
+
+
+      if (res.status(201))
+      {
+      // enviar correo de bienvenida
+        await bienvenida(nombre, email);
+      }
+
 
     return res.status(201).json({
       success: true,
