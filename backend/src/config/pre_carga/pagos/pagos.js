@@ -3,6 +3,7 @@
 //
 // guardia 1: Ana Garcia, 4 horas escolar (5000/h) = 20000
 // guardia 3: Ana Garcia, 6 horas rehabilitacion (6500/h) = 39000
+// guardia 5: Ana Garcia, 5 horas escolar (5000/h) = 25000 — paciente Bruno Perez (familiar Ana Maria)
 //
 // id_pago_autorizo: id del usuario admin que autorizo el pago (1 = Carlos, 2 = Valeria)
 // cantidad_horas: se usa formato Time para representar horas trabajadas
@@ -11,7 +12,7 @@ const pagos = [
     {
         id_cuidador: 1,
         id_guardia: 1,
-        fecha_pago: new Date('2026-02-21T10:00:00'),
+        fecha_pago: new Date('2026-03-02T10:00:00'),
         id_pago_autorizo: 1,
         cantidad_horas: new Date('1970-01-01T04:00:00'),
         importe_abonado: 20000.00,
@@ -19,10 +20,18 @@ const pagos = [
     {
         id_cuidador: 1,
         id_guardia: 3,
-        fecha_pago: new Date('2026-02-19T14:00:00'),
+        fecha_pago: new Date('2026-03-03T14:00:00'),
         id_pago_autorizo: 2,
         cantidad_horas: new Date('1970-01-01T06:00:00'),
         importe_abonado: 39000.00,
+    },
+    {
+        id_cuidador: 1,
+        id_guardia: 5,
+        fecha_pago: new Date('2026-03-04T16:00:00'),
+        id_pago_autorizo: 1,
+        cantidad_horas: new Date('1970-01-01T05:00:00'),
+        importe_abonado: 25000.00,
     },
 ]
 

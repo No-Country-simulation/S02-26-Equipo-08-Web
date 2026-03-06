@@ -67,6 +67,12 @@ const familiares = [
         id_paciente: 7,
         id_parentesco: 6,
     },
+    // id_usuario 17: Ana Maria Perez (madre de paciente 8 - Bruno Perez)
+    {
+        id_usuario: 17,
+        id_paciente: 8,
+        id_parentesco: 1,
+    },
 ]
 
 module.exports = { familiares }

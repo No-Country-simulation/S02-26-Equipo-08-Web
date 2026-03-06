@@ -98,6 +98,20 @@ const pacientes = [
         fecha_ingreso: new Date('2026-02-10'),
         id_paciente_estado: 1,
     },
+    // paciente 8: Bruno Perez - familiar: Ana Maria Perez (madre, user 17)
+    {
+        nombre: 'Bruno',
+        apellido: 'Perez',
+        identificacion: '55004004',
+        direccion: 'Cordoba 1500, CABA',
+        telefono: '1155018018',
+        edad: 6,
+        diagnostico: 'Trastorno del lenguaje y comunicacion',
+        obra_social: 'OSDE',
+        nro_afiliado: 'OSDE-00661122',
+        fecha_ingreso: new Date('2026-02-15'),
+        id_paciente_estado: 1,
+    },
 ]
 
 module.exports = { pacientes }

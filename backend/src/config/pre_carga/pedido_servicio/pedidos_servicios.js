@@ -155,6 +155,17 @@ const pedidos_servicios = [
         fecha_finalizado: null,
         observaciones: 'Acompanamiento madrugada - fuera del horario de todos los cuidadores',
     },
+    // Pedido 14 — Ana Maria Perez solicita servicio para Bruno Perez (paciente 8) - FINALIZADO
+    {
+        id_usuario: 17,
+        id_paciente: 8,
+        fecha_del_servicio: new Date('2026-03-04T09:00:00'),
+        hora_inicio: new Date('1970-01-01T09:00:00'),
+        cantidad_horas_solicitadas: 5,
+        id_pedido_estado: 5, // Finalizado
+        fecha_finalizado: new Date('2026-03-04'),
+        observaciones: 'Acompanamiento escolar turno manana para Bruno',
+    },
 ]
 
 module.exports = { pedidos_servicios }

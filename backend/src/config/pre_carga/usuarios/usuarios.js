@@ -195,6 +195,18 @@ const usuarios = [
         pass: '123456',
         id_usuario_estado: 2, // Activo
     },
+    {
+        nombre: 'Ana Maria',
+        apellido: 'Perez',
+        dni: '40123456',
+        email: 'familiar10@gmail.com',
+        direccion: 'Cordoba 1500, CABA',
+        telefono: '1155018018',
+        edad: 38,
+        id_rol: 3,
+        pass: '123456',
+        id_usuario_estado: 2, // Activo
+    },
 ]
 
 module.exports = {usuarios}

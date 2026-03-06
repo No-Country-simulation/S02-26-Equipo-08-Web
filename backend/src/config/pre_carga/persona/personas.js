@@ -155,6 +155,15 @@ const personas = [
         telefono: '1155014014',
         edad: 29,
     },
+    {
+        id_usuario: 17,
+        apellido: 'Perez',
+        nombre: 'Ana Maria',
+        identificacion: '40123456',
+        direccion: 'Cordoba 1500, CABA',
+        telefono: '1155018018',
+        edad: 38,
+    },
 ]
 
 module.exports = { personas }

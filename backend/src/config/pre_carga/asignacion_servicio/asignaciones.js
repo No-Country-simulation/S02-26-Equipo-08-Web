@@ -9,6 +9,7 @@
 // pedido 5: asignado - cuidador 2 (Lucas Moix), tarea 3 (cuidado domiciliario)
 // pedido 6: pendiente - no tiene asignacion todavia
 // pedido 7: cancelado - no tiene asignacion
+// pedido 14: finalizado - cuidador 1 (Ana Garcia), tarea 1 (acompanamiento escolar), paciente 8 (Bruno Perez)
 //
 // id_asignado_por: id del usuario admin que realizo la asignacion (1 = Carlos, 2 = Valeria)
 
@@ -46,6 +47,15 @@ const asignaciones = [
         id_pedido: 5,
         id_asignado_por: 1,
         fecha_asignacion: new Date('2026-02-23T08:00:00'),
+    },
+    {
+        id_cuidador: 1,
+        id_paciente: 8,
+        id_tarea: 1,
+        id_pedido: 14,
+        id_asignado_por: 1,
+        fecha_asignacion: new Date('2026-03-03T10:00:00'),
+        informe_cuidado: 'El niño participó activamente en las actividades escolares. Se trabajaron habilidades de comunicación y lenguaje. Sin incidentes. Se recomienda continuar con el acompañamiento tres veces por semana.',
     },
 ]
 
