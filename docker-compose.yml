@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # --- BASE DE DATOS POSTGRESQL ---
+  db:
+    image: postgres:15
+    container_name: s02-26-equipo-08-web_db
+    restart: always
+    # Le indicamos a la DB que lea las variables del .env del backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pyme-network
+
+  # --- BACKEND PRINCIPAL ---
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: s02-26-equipo-08-web_backend
+    restart: always
+    # Mapeo: Puerto 8001 (OCI) -> Puerto 3000 (Definido en tu .env)
+    ports:
+      - "8001:3000"
+    depends_on:
+      - db
+    env_file:
+      - ./backend/.env
+    networks:
+      - pyme-network
+
+  # --- MICROSERVICIO API-MAILS ---
+  api-mails:
+    build: 
+      context: ./api-mails
+      dockerfile: Dockerfile
+    container_name: s02-26-equipo-08-web_mails
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - ./api-mails/.env
+    networks:
+      - pyme-network
+
+  # --- FRONTEND ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: s02-26-equipo-08-web_frontend
+    restart: always
+    ports:
+      - "3000:80"  # Mapeo: Puerto 3000 (OCI) -> Puerto 80 (Nginx interno)
+    networks:
+      - pyme-network
+
+networks:
+  pyme-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
